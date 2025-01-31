@@ -1,0 +1,82 @@
+[tool.poetry]
+name = "warpfactory"
+version = "0.1.0"
+description = "Python port of WarpFactory - A MATLAB-based warp drive metric solver"
+authors = [""]
+license = "MIT"
+readme = "README.md"
+packages = [
+    { include = "warpfactory", from = "." },
+]
+include = ["warpfactory/py.typed"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+numpy = "^1.26.4"
+scipy = "^1.12.0"
+torch = "^2.2.1"
+matplotlib = "^3.8.3"
+PyQt6 = "^6.6.1"
+PyQt6-Qt6 = "^6.6.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.2"
+pytest-cov = "^4.1.0"
+black = "^24.2.0"
+isort = "^5.13.2"
+flake8 = "^7.0.0"
+mypy = "^1.8.0"
+pylint = "^3.0.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["warpfactory/tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=warpfactory"
+markers = [
+    "gui: marks tests that require Qt GUI libraries",
+    "gpu: marks tests that require GPU support"
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+ignore_missing_imports = false
+
+[[tool.mypy.overrides]]
+module = [
+    "numpy.*",
+    "scipy.*",
+    "matplotlib.*",
+    "torch.*"
+]
+ignore_missing_imports = true
+
+[tool.poetry.scripts]
+lint = "poetry run pylint warpfactory"
+typecheck = "poetry run mypy warpfactory"
+format = "poetry run black . && poetry run isort ."
+check = "poetry run black --check . && poetry run isort --check-only . && poetry run flake8 . && poetry run mypy warpfactory && poetry run pylint warpfactory"
+test = "poetry run pytest --cov=warpfactory"
