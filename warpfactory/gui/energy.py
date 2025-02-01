@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QComboBox,
     QLabel, QCheckBox
 )
-from matplotlib.backends.backend_qt6agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import numpy as np
 
@@ -19,6 +19,11 @@ class EnergyConditionViewer(QWidget):
         self.current_mode = "density"
         self.violations_visible = False
         self.energy_conditions = EnergyConditions()
+        self.tensor = None
+        self.mode_selector = QComboBox(self)
+        self.figure = Figure()
+        self.canvas = FigureCanvasQTAgg(self.figure)
+        self.highlight_check = QCheckBox("Highlight Violations", self)
         self.setup_ui()
     
     def setup_ui(self):

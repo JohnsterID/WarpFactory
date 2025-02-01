@@ -1,23 +1,20 @@
 """Parameter input panel for metric configuration."""
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QDoubleSpinBox
-)
+from warpfactory.gui import *
 
 class ParameterPanel(QWidget):
     """Panel for inputting metric parameters."""
     
-    def __init__(self):
+    def __init__(self, parent=None):
         """Initialize the parameter panel."""
-        super().__init__()
+        super().__init__(parent)
         self.parameters = {}
         self.spinboxes = {}
+        self.layout = QVBoxLayout(self)
         self.setup_ui()
     
     def setup_ui(self):
         """Set up the user interface."""
-        self.layout = QVBoxLayout(self)
         self.layout.addWidget(QLabel("Parameters:"))
     
     def set_parameters(self, params: dict):
@@ -106,3 +103,13 @@ class ParameterPanel(QWidget):
         except ValueError:
             # Restore previous value
             self.spinboxes[param].setValue(self.parameters[param])
+            
+    def get_all_parameters(self) -> dict:
+        """Get all current parameter values.
+        
+        Returns
+        -------
+        dict
+            Dictionary of parameter names and values
+        """
+        return {name: self.get_value(name) for name in self.parameters}

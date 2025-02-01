@@ -1,23 +1,29 @@
 """Main window for metric exploration."""
 
-from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QComboBox, QPushButton, QLabel
-)
-from PyQt6.QtCore import Qt
+from warpfactory.gui import *
 
-from .plotter import MetricPlotter
-from .parameters import ParameterPanel
-from .energy import EnergyConditionViewer
-
-class MetricExplorer(QMainWindow):
+class MetricExplorer(QWidget):
     """Main window for exploring warp drive metrics."""
     
-    def __init__(self):
+    def __init__(self, parent=None):
         """Initialize the main window."""
-        super().__init__()
-        self.setWindowTitle("WarpFactory Metric Explorer")
+        super().__init__(parent)
+        self.metric_selector = QComboBox(self)
+        self.metric_selector.setObjectName("metric_selector")
+        self.parameter_panel = ParameterPanel(self)
+        self.parameter_panel.setObjectName("parameter_panel")
+        self.plotter = MetricPlotter(self)
+        self.plotter.setObjectName("metric_plotter")
+        self.energy_viewer = EnergyConditionViewer(self)
+        self.energy_viewer.setObjectName("energy_viewer")
         self.setup_ui()
+        
+    def findChild(self, cls, name):
+        """Find a child widget by class and name."""
+        for child in self.findChildren(cls):
+            if child.objectName() == name:
+                return child
+        return None
     
     def setup_ui(self):
         """Set up the user interface."""
@@ -58,10 +64,12 @@ class MetricExplorer(QMainWindow):
         
         # Metric plotter
         self.plotter = MetricPlotter()
+        self.plotter.setObjectName("metric_plotter")
         right_layout.addWidget(self.plotter)
         
         # Energy condition viewer
         self.energy_viewer = EnergyConditionViewer()
+        self.energy_viewer.setObjectName("energy_viewer")
         right_layout.addWidget(self.energy_viewer)
         
         # Add right panel to main layout
@@ -69,6 +77,9 @@ class MetricExplorer(QMainWindow):
         
         # Set up connections
         self.metric_selector.currentTextChanged.connect(self.on_metric_changed)
+        
+        # Initialize with default metric
+        self.on_metric_changed("Alcubierre")
         
     def on_metric_changed(self, metric_name: str):
         """Handle metric selection changes."""
