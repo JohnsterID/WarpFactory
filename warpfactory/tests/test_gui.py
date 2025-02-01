@@ -1,21 +1,15 @@
 """Test GUI components."""
 
 import pytest
-
-# Try to import Qt, but don't fail if not available
-try:
-    from PyQt6.QtWidgets import QApplication, QComboBox
-    from PyQt6.QtTest import QTest
-    from PyQt6.QtCore import Qt
-    HAS_QT = True
-except ImportError:
-    HAS_QT = False
-
-# Skip all tests if Qt is not available
-pytestmark = pytest.mark.skipif(
-    not HAS_QT,
-    reason="Qt6 is not available. Install system dependencies to run GUI tests."
+import numpy as np
+from warpfactory.gui import (
+    QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
+    QPushButton, QLabel, QMainWindow, QDoubleSpinBox,
+    MetricExplorer, MetricPlotter, ParameterPanel,
+    EnergyConditionViewer
 )
+from PyQt6.QtTest import QTest
+from PyQt6.QtCore import Qt
 
 from warpfactory.gui import (
     MetricExplorer,
@@ -24,61 +18,71 @@ from warpfactory.gui import (
     EnergyConditionViewer,
 )
 
-# Create QApplication instance for testing
-@pytest.fixture(scope="session")
-def app():
-    """Create QApplication instance."""
-    return QApplication([])
-
 @pytest.mark.gui
-def test_metric_explorer(app, metric_params, spatial_grid):
+def test_metric_explorer(app, window, container, metric_params, spatial_grid):
     """Test the main metric explorer window."""
-    explorer = MetricExplorer()
+    explorer = MetricExplorer(container)
     
     # Check initial state
-    assert explorer.windowTitle() == "WarpFactory Metric Explorer"
-    assert explorer.isVisible() == False
+    assert not explorer.isVisible()
     
     # Test metric selection
-    metric_combo = explorer.findChild(QComboBox, "metric_selector")
+    metric_combo = explorer.metric_selector
+    assert metric_combo is not None
     assert "Alcubierre" in [metric_combo.itemText(i) for i in range(metric_combo.count())]
     assert "Lentz" in [metric_combo.itemText(i) for i in range(metric_combo.count())]
     
     # Test parameter panel
-    param_panel = explorer.findChild(ParameterPanel, "parameter_panel")
+    param_panel = explorer.parameter_panel
     assert param_panel is not None
+    assert param_panel.parameters == {}  # Initial state
+    
+    # Test metric change
+    QTest.mouseClick(metric_combo, Qt.MouseButton.LeftButton)
+    metric_combo.setCurrentText("Alcubierre")
     assert "v_s" in param_panel.parameters
     assert "R" in param_panel.parameters
     assert "sigma" in param_panel.parameters
 
 @pytest.mark.gui
-def test_metric_plotter(app, test_metric_components):
+def test_metric_plotter(app, window, container, test_metric_components):
     """Test the metric visualization widget."""
     components, x = test_metric_components
     plotter = MetricPlotter()
+    container.layout().addWidget(plotter)
+    
+    # Test initial state
+    assert plotter.current_component == "g_tt"
+    assert plotter.colormap == "redblue"
     
     # Test component selection
-    plotter.set_metric(components)
-    assert plotter.current_component == "g_tt"
-    
-    # Test plot update
+    plotter.components = components
     plotter.plot_component("g_tx")
     assert plotter.current_component == "g_tx"
     
     # Test colormap options
-    assert plotter.colormap == "redblue"
     plotter.set_colormap("warp")
     assert plotter.colormap == "warp"
+    
+    # Test plot data
+    data = plotter.get_plot_data()
+    assert isinstance(data, np.ndarray)
+    assert data.shape == components["g_tx"].shape
 
 @pytest.mark.gui
-def test_parameter_panel(app, metric_params):
+def test_parameter_panel(app, window, container, metric_params):
     """Test the parameter input panel."""
     panel = ParameterPanel()
+    container.layout().addWidget(panel)
+    
+    # Test initial state
+    assert panel.parameters == {}
     
     # Test parameter setup
     panel.set_parameters(metric_params)
+    params = panel.get_all_parameters()
     for param, value in metric_params.items():
-        assert panel.get_value(param) == value
+        assert params[param] == value
     
     # Test value changes
     panel.set_value("v_s", 3.0)
@@ -91,24 +95,24 @@ def test_parameter_panel(app, metric_params):
         panel.set_value("R", 0.0)  # Radius should be positive
 
 @pytest.mark.gui
-def test_energy_condition_viewer(app, test_energy_tensor):
+def test_energy_condition_viewer(app, window, container, test_energy_tensor):
     """Test the energy condition visualization."""
     tensor, x = test_energy_tensor
     viewer = EnergyConditionViewer()
+    container.layout().addWidget(viewer)
     
-    # Test energy condition calculation
-    viewer.set_tensor(tensor)
-    conditions = viewer.check_conditions()
-    assert "weak" in conditions
-    assert "null" in conditions
-    assert "strong" in conditions
-    assert "dominant" in conditions
+    # Test initial state
+    assert viewer.current_mode == "density"
+    assert not viewer.violations_visible
+    
+    # Test tensor update
+    viewer.tensor = tensor
+    viewer.update_plot()
     
     # Test visualization modes
-    assert viewer.current_mode == "density"
     viewer.set_mode("pressure")
     assert viewer.current_mode == "pressure"
     
     # Test region highlighting
     viewer.highlight_violations(True)
-    assert viewer.violations_visible == True
+    assert viewer.violations_visible

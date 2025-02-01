@@ -1,18 +1,23 @@
 """Interactive metric visualization widget."""
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QComboBox, QLabel
-from matplotlib.backends.backend_qt6agg import FigureCanvasQTAgg
+from warpfactory.gui import *
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import numpy as np
 
 class MetricPlotter(QWidget):
     """Widget for interactive metric visualization."""
     
-    def __init__(self):
+    def __init__(self, parent=None):
         """Initialize the plotter widget."""
-        super().__init__()
+        super().__init__(parent)
         self.current_component = "g_tt"
         self.colormap = "redblue"
+        self.components = {}
+        self.comp_selector = QComboBox(self)
+        self.cmap_selector = QComboBox(self)
+        self.figure = Figure()
+        self.canvas = FigureCanvasQTAgg(self.figure)
         self.setup_ui()
     
     def setup_ui(self):
@@ -90,3 +95,15 @@ class MetricPlotter(QWidget):
         self.colormap = cmap
         if hasattr(self, 'components'):
             self.plot_component(self.current_component)
+            
+    def get_plot_data(self) -> np.ndarray:
+        """Get the current plot data.
+        
+        Returns
+        -------
+        np.ndarray
+            Current component data being displayed
+        """
+        if not hasattr(self, 'components'):
+            return np.array([])
+        return self.components[self.current_component]
