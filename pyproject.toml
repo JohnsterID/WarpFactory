@@ -2,7 +2,7 @@
 name = "warpfactory"
 version = "0.1.0"
 description = "Python port of WarpFactory - A MATLAB-based warp drive metric solver"
-authors = [""]
+authors = ["JohnsterID"]
 license = "MIT"
 readme = "README.md"
 packages = [
