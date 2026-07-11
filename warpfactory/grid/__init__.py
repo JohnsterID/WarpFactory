@@ -30,6 +30,11 @@ from .metrics import (
 )
 from .plotting import get_slice_data, plot_tensor, plot_three_plus_one
 from .shape_functions import alcubierre_shape, compact_sigmoid
+from .si_units import (
+    si_energy_factor,
+    stress_energy_to_geometric,
+    stress_energy_to_si,
+)
 from .solver import GridSolver
 from .tensor import SpacetimeTensor, change_tensor_index, verify_tensor
 from .three_plus_one import (
@@ -68,6 +73,9 @@ __all__ = [
     'three_plus_one_decomposer',
     'alcubierre_shape',
     'compact_sigmoid',
+    'si_energy_factor',
+    'stress_energy_to_si',
+    'stress_energy_to_geometric',
     'get_energy_conditions',
     'do_frame_transfer',
     'eulerian_transformation_matrix',

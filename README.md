@@ -312,7 +312,21 @@ grid pipeline:
   lattice-sampled null or timelike observer fields
   (`generate_uniform_field`), returning the most-violating evaluation
   at every grid point.
+- SI conversion at the API boundary (`stress_energy_to_si`,
+  `si_energy_factor`): multiply geometric-unit stress-energy (1/m^2)
+  by c^4/G to get J/m^3 for direct comparison with the MATLAB output
+  and the published figures.
 - Slice plotting (`plot_tensor`, `plot_three_plus_one`).
+
+Quantitative validation against the WarpFactory paper (Helmerich et
+al., CQG 2024; arXiv 2404.03095v2) is committed as
+`warpfactory/tests/test_paper_validation.py`: the Section 4.1
+Alcubierre configuration (v = 0.1c, R = 300 m, sigma = 0.015 1/m)
+reproduces the analytic peak Eulerian energy density of
+-6.775e35 J/m^3 to 2% on a 64^3 grid at 12.5 m spacing (4th-order FD),
+the negative-energy shell localizes to the bubble wall (Figure 2), and
+the Null/Weak/Dominant/Strong violations of Table 1 are reproduced for
+the Alcubierre, Van Den Broeck, and Modified Time metrics.
 
 This is a physics-first port, not a bug-for-bug one. Deliberate
 differences from the MATLAB original:
