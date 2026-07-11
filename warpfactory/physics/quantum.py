@@ -20,6 +20,7 @@ class QuantumEffects:
         self.c = 299792458.0       # Speed of light
         self.G = 6.67430e-11       # Gravitational constant
         self.k_B = 1.380649e-23    # Boltzmann constant
+        self.sigma_sb = 5.670374419e-8  # Stefan-Boltzmann constant
     
     def hawking_temperature(self, surface_gravity: float) -> float:
         """Calculate Hawking-like temperature.
@@ -53,10 +54,14 @@ class QuantumEffects:
             Production rate (particles/second)
         """
         T = self.hawking_temperature(surface_gravity)
+        if T <= 0:
+            return 0.0
         area = 4 * np.pi * bubble_radius**2
-        
-        # Stefan-Boltzmann-like radiation
-        return 5.67e-8 * area * T**4 / (self.hbar * self.c**2)
+
+        # Radiated power (Stefan-Boltzmann) divided by the mean photon
+        # energy of a thermal spectrum, <E> ~= 2.7 k_B T
+        power = self.sigma_sb * area * T**4
+        return power / (2.7 * self.k_B * T)
     
     def vacuum_polarization(self, surface_gravity: float,
                           bubble_radius: float) -> Dict[str, float]:
@@ -76,8 +81,9 @@ class QuantumEffects:
         """
         T = self.hawking_temperature(surface_gravity)
         
-        # Simplified vacuum energy density
-        energy_density = np.pi**2 * self.k_B**4 * T**4 / (30 * self.hbar**3 * self.c**5)
+        # Thermal radiation energy density: a T^4 with
+        # a = pi^2 k_B^4 / (15 hbar^3 c^3)
+        energy_density = np.pi**2 * self.k_B**4 * T**4 / (15 * self.hbar**3 * self.c**3)
         
         # Radiation pressure
         pressure = energy_density / 3
@@ -104,13 +110,17 @@ class QuantumEffects:
             Backreaction estimates
         """
         effects = self.vacuum_polarization(surface_gravity, bubble_radius)
-        
-        # Estimate metric correction
-        correction = (self.G / self.c**4) * effects["energy_density"] * bubble_radius
-        
-        # Estimate bubble lifetime
-        mass_loss_rate = self.particle_production_rate(surface_gravity, bubble_radius)
-        lifetime = bubble_radius * self.c / mass_loss_rate
+
+        # Dimensionless metric perturbation h ~ (G/c^4) rho R^2
+        correction = (self.G / self.c**4) * effects["energy_density"] * bubble_radius**2
+
+        # Lifetime = thermal energy content / radiated power
+        T = self.hawking_temperature(surface_gravity)
+        volume = 4 / 3 * np.pi * bubble_radius**3
+        area = 4 * np.pi * bubble_radius**2
+        power = self.sigma_sb * area * T**4
+        lifetime = (effects["energy_density"] * volume / power
+                    if power > 0 else np.inf)
         
         return {
             "metric_correction": correction,
@@ -153,7 +163,8 @@ class QuantumEffects:
         T = self.hawking_temperature_batch(surface_gravity)
         area = 4 * np.pi * bubble_radius**2
         
-        return 5.67e-8 * area * T**4 / (self.hbar * self.c**2)
+        power = self.sigma_sb * area * T**4
+        return power / (2.7 * self.k_B * T)
     
     def vacuum_polarization_batch(self,
                                 surface_gravity: torch.Tensor,
@@ -176,7 +187,7 @@ class QuantumEffects:
         
         # Vacuum energy density
         energy_density = (np.pi**2 * self.k_B**4 * T**4 /
-                        (30 * self.hbar**3 * self.c**5))
+                        (15 * self.hbar**3 * self.c**3))
         
         # Radiation pressure
         pressure = energy_density / 3

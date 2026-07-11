@@ -17,7 +17,7 @@ class TorchEnergyAnalyzer:
         self.device = torch.device(device)
     
     def check_weak_condition(self, T_munu: Dict[str, torch.Tensor]) -> bool:
-        """Check weak energy condition: T_μν t^μ t^ν ≥ 0.
+        """Check weak energy condition: T_munu t^mu t^nu >= 0.
         
         Parameters
         ----------
@@ -33,7 +33,7 @@ class TorchEnergyAnalyzer:
         return bool(torch.all(rho >= 0).item())
     
     def check_null_condition(self, T_munu: Dict[str, torch.Tensor]) -> bool:
-        """Check null energy condition: T_μν k^μ k^ν ≥ 0.
+        """Check null energy condition: T_munu k^mu k^nu >= 0.
         
         Parameters
         ----------
@@ -50,7 +50,7 @@ class TorchEnergyAnalyzer:
         return bool(torch.all(rho + p >= -1e-10).item())
     
     def check_strong_condition(self, T_munu: Dict[str, torch.Tensor]) -> bool:
-        """Check strong energy condition: (T_μν - 1/2 T g_μν) t^μ t^ν ≥ 0.
+        """Check strong energy condition: (T_munu - 1/2 T g_munu) t^mu t^nu >= 0.
         
         Parameters
         ----------
@@ -69,7 +69,7 @@ class TorchEnergyAnalyzer:
         return bool(torch.all(rho + p + trace/2 >= -1e-10).item())
     
     def check_dominant_condition(self, T_munu: Dict[str, torch.Tensor]) -> bool:
-        """Check dominant energy condition: -T^μ_ν t^ν is future-directed.
+        """Check dominant energy condition: -T^mu_nu t^nu is future-directed.
         
         Parameters
         ----------

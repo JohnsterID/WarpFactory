@@ -30,7 +30,7 @@ class ThreePlusOnePlotter:
         im = ax.pcolormesh(X, Y, decomp["alpha"], cmap=self.cmaps.warp(),
                           shading='auto')
         plt.colorbar(im, ax=ax)
-        ax.set_title('Lapse Function α')
+        ax.set_title('Lapse Function alpha')
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.set_aspect('equal')
@@ -69,7 +69,7 @@ class ThreePlusOnePlotter:
                  decomp["beta"]["y"][::skip, ::skip],
                  color='white', alpha=0.5)
         
-        ax.set_title('Shift Vector β')
+        ax.set_title('Shift Vector beta')
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.set_aspect('equal')
@@ -96,25 +96,25 @@ class ThreePlusOnePlotter:
         
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 4))
         
-        # Plot γ_xx
+        # Plot gamma_xx
         im1 = ax1.pcolormesh(X, Y, decomp["gamma"]["xx"], cmap=self.cmaps.redblue(),
                             shading='auto')
         plt.colorbar(im1, ax=ax1)
-        ax1.set_title('γ_xx')
+        ax1.set_title('gamma_xx')
         ax1.set_aspect('equal')
         
-        # Plot γ_xy
+        # Plot gamma_xy
         im2 = ax2.pcolormesh(X, Y, decomp["gamma"]["xy"], cmap=self.cmaps.redblue(),
                             shading='auto')
         plt.colorbar(im2, ax=ax2)
-        ax2.set_title('γ_xy')
+        ax2.set_title('gamma_xy')
         ax2.set_aspect('equal')
         
-        # Plot γ_yy
+        # Plot gamma_yy
         im3 = ax3.pcolormesh(X, Y, decomp["gamma"]["yy"], cmap=self.cmaps.redblue(),
                             shading='auto')
         plt.colorbar(im3, ax=ax3)
-        ax3.set_title('γ_yy')
+        ax3.set_title('gamma_yy')
         ax3.set_aspect('equal')
         
         plt.tight_layout()

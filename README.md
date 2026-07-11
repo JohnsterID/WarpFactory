@@ -4,14 +4,17 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/warpfactory.svg)](https://badge.fury.io/py/warpfactory)
 
-A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory), a numerical toolkit for analyzing warp drive spacetimes using Einstein's theory of General Relativity. This implementation aims to make the toolkit more accessible to the Python scientific computing community while maintaining full compatibility with the original MATLAB implementation's functionality.
+A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory), a numerical toolkit for analyzing warp drive spacetimes using Einstein's theory of General Relativity. This implementation aims to make the toolkit more accessible to the Python scientific computing community. It is a work in progress and does not yet reach feature parity with the original MATLAB implementation; see "Parity with the MATLAB original" below for the current status.
 
 ## Key Features
 
 ### Core Functionality
-- 3D finite difference solver for the stress-energy tensor
-- Energy condition evaluations (Null, Weak, Dominant, Strong)
-- Metric scalar evaluation (shear, expansion, vorticity)
+- Finite difference solver (2nd/4th order) for the stress-energy tensor
+  via the Einstein field equations on 1-D axial slices
+- Christoffel symbol, Ricci tensor/scalar, and Kretschmann scalar
+  computation for Cartesian slices and spherically symmetric metrics
+- Energy condition evaluations (Null, Weak, Dominant, Strong) by
+  pointwise observer sampling
 - Momentum flow visualizations
 
 ### GPU Acceleration
@@ -185,11 +188,11 @@ mass_geometric = units.to_geometric_units("mass", mass_kg)
 ## Project Structure
 ```
 warpfactory/
-├── metrics/          # Spacetime metric implementations
-├── solver/          # Numerical solvers and tensor calculations
-├── analyzer/        # Physical analysis tools
-├── units/           # Unit conversion and management
-└── visualizer/      # Plotting and visualization tools
+|- metrics/          # Spacetime metric implementations
+|- solver/          # Numerical solvers and tensor calculations
+|- analyzer/        # Physical analysis tools
+|- units/           # Unit conversion and management
+`- visualizer/      # Plotting and visualization tools
 ```
 
 ## Testing
@@ -280,9 +283,30 @@ metric_cpu = {k: v.cpu() for k, v in metric.items()}
 - Add tests for edge cases and error conditions
 - Maintain backward compatibility when possible
 
+## Parity with the MATLAB original
+
+This port does not yet reproduce the full MATLAB WarpFactory pipeline.
+Known gaps relative to the original:
+
+- Metrics are evaluated on 1-D axial slices rather than full 4-D grids,
+  and comoving metric variants (AlcubierreComoving, LentzComoving,
+  VanDenBroeckComoving, the TOV-based WarpShellComoving) are not
+  implemented. Schwarzschild and ModifiedTime metrics are also absent.
+- The stress-energy solver supports 1-D slices only; the MATLAB
+  met2den/met2den2 solvers operate on full 3-D spatial grids.
+- Tensor index management (verifyTensor, changeTensorIndex) and the
+  interpolation utilities (trilinear, quadrilinear, Legendre radial)
+  have no Python equivalents yet.
+- Visualization is basic compared to plotTensor/plotThreePlusOne.
+
+Results from the WarpFactory papers should be reproduced with the
+original MATLAB toolkit until these gaps are closed.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+The license retains the copyright of the original MATLAB WarpFactory authors
+(Christopher Helmerich & Jared Fuchs) alongside the Python port copyright.
 
 ## Acknowledgments
 

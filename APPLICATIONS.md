@@ -167,7 +167,7 @@ fig = plotter.plot_component(T_munu, "T_tt", x, y,
     title="Energy Density",
     cmap="RdBu_r"
 )
-plt.colorbar(label="ρ (c⁴/G)")
+plt.colorbar(label="rho (c^4/G)")
 plt.savefig("energy_density.png")
 ```
 
@@ -184,7 +184,7 @@ forces = tidal.calculate(components, gamma, x, y, z)
 plt.figure()
 plt.plot(x, forces["radial"])
 plt.xlabel("Distance (m)")
-plt.ylabel("Tidal Force (m/s²)")
+plt.ylabel("Tidal Force (m/s^2)")
 plt.savefig("tidal_forces.png")
 ```
 

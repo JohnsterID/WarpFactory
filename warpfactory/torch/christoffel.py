@@ -36,10 +36,10 @@ class TorchChristoffel:
         r = coords["r"]
         
         # Calculate specific components for Schwarzschild
-        # Γ^r_tt = (r-2)/(2r^3)
+        # Gamma^r_tt = (r-2)/(2r^3)
         gamma_r_tt = (r - 2)/(2 * r**3)
         
-        # Γ^t_tr = 1/(r(r-2))
+        # Gamma^t_tr = 1/(r(r-2))
         gamma_t_tr = 1/(r*(r - 2))
         
         return {

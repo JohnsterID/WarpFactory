@@ -25,13 +25,13 @@ class ThreePlusOneDecomposition:
         g_theta_theta = metric["g_theta_theta"]
         g_phi_phi = metric["g_phi_phi"]
         
-        # Calculate lapse function (α)
+        # Calculate lapse function (alpha)
         alpha = np.sqrt(-1/g_tt)
         
-        # Calculate shift vector (β^i)
+        # Calculate shift vector (beta^i)
         beta = np.zeros_like(g_tt)  # Zero for spherically symmetric metric
         
-        # Calculate spatial metric (γ_ij)
+        # Calculate spatial metric (gamma_ij)
         gamma = {
             "g_rr": g_rr,
             "g_theta_theta": g_theta_theta,

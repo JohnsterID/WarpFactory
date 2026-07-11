@@ -6,8 +6,8 @@ class Constants:
     def __init__(self):
         # Fundamental constants
         self._c = 299792458  # Speed of light in m/s
-        self._G = 6.67430e-11  # Gravitational constant in m³/kg/s²
-        self._h = 6.62607015e-34  # Planck constant in J⋅s
+        self._G = 6.67430e-11  # Gravitational constant in m^3/kg/s^2
+        self._h = 6.62607015e-34  # Planck constant in J.s
         
         # Derived constants
         self._planck_length = np.sqrt(self._h * self._G / self._c**3)
@@ -21,12 +21,12 @@ class Constants:
     
     @property
     def G(self) -> float:
-        """Gravitational constant in m³/kg/s²."""
+        """Gravitational constant in m^3/kg/s^2."""
         return self._G
     
     @property
     def h(self) -> float:
-        """Planck constant in J⋅s."""
+        """Planck constant in J.s."""
         return self._h
     
     @property

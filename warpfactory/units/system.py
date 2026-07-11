@@ -56,7 +56,7 @@ class UnitSystem:
             raise ValueError(f"Unknown quantity type: {quantity_type}")
     
     def to_natural_units(self, quantity_type: str, value: float) -> float:
-        """Convert SI units to natural units (ℏ = c = 1).
+        """Convert SI units to natural units (hbar = c = 1).
         
         Parameters
         ----------
@@ -82,7 +82,7 @@ class UnitSystem:
             raise ValueError(f"Unknown quantity type: {quantity_type}")
     
     def from_natural_units(self, quantity_type: str, value: float) -> float:
-        """Convert natural units (ℏ = c = 1) to SI units.
+        """Convert natural units (hbar = c = 1) to SI units.
         
         Parameters
         ----------

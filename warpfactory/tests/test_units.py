@@ -15,10 +15,10 @@ def test_physical_constants():
     assert const.c == 299792458  # m/s
     
     # Test gravitational constant
-    assert np.isclose(const.G, 6.67430e-11)  # m³/kg/s²
+    assert np.isclose(const.G, 6.67430e-11)  # m^3/kg/s^2
     
     # Test Planck constant
-    assert np.isclose(const.h, 6.62607015e-34)  # J⋅s
+    assert np.isclose(const.h, 6.62607015e-34)  # J.s
     
     # Test derived constants
     assert np.isclose(const.planck_length, np.sqrt(const.h * const.G / const.c**3))
@@ -66,7 +66,7 @@ def test_unit_system(physical_constants):
     time_back = units.from_geometric_units("time", time_geometric)
     assert np.isclose(time_back, time_s, rtol=1e-10)
     
-    # Test natural units (ℏ = c = 1)
+    # Test natural units (hbar = c = 1)
     # Test energy conversion
     energy_joules = 1.0e6  # 1 MeV in Joules
     energy_natural = units.to_natural_units("energy", energy_joules)

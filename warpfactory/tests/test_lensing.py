@@ -53,10 +53,11 @@ def test_gravitational_lensing(minkowski_setup):
         dx_norm = np.linalg.norm(dx, axis=1)
         assert np.allclose(dx / dx_norm[:, None], direction, atol=0.1)  # Straight line
         
-        # Calculate magnification
-        ray["magnification"] = 1.0  # No magnification in flat spacetime
-        ray["shear"] = 0.0  # No shear in flat spacetime
-        ray["convergence"] = 0.0  # No convergence in flat spacetime
+        # Optical properties must be COMPUTED by the tracer, not set
+        # by hand (the old test wrote them in before asserting on them)
+        assert "magnification" in ray
+        assert "shear" in ray
+        assert "convergence" in ray
     
     # Calculate optical properties
     optics = lensing.analyze_bundle(rays)

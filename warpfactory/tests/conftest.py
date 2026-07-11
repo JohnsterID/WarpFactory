@@ -1,9 +1,22 @@
 """Test configuration and shared fixtures."""
 
+import os
 import pytest
 import numpy as np
 from warpfactory.metrics import MinkowskiMetric
 from warpfactory.units import Constants
+
+# GUI tests must run headless on CI
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+
+@pytest.fixture(scope="session")
+def app():
+    """Session-wide QApplication (Qt allows only one instance)."""
+    QApplication = pytest.importorskip(
+        "PyQt6.QtWidgets", reason="PyQt6 is not available"
+    ).QApplication
+    return QApplication.instance() or QApplication([])
 
 
 @pytest.fixture

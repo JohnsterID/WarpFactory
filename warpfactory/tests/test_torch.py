@@ -78,10 +78,10 @@ def test_torch_energy_tensor(device, spatial_grid_torch, metric_params):
     rho = T_munu["T_tt"]  # Energy density
     p = T_munu["T_xx"]    # Pressure
     
-    # Weak energy condition: ρ ≥ 0
+    # Weak energy condition: rho >= 0
     assert torch.all(rho >= 0)
     
-    # Null energy condition: ρ + p ≥ 0
+    # Null energy condition: rho + p >= 0
     assert torch.all(rho + p >= -1e-10)  # Allow small numerical errors
 
 def test_torch_christoffel(device):
@@ -116,7 +116,7 @@ def test_torch_christoffel(device):
     assert all(comp.device == device for comp in gamma.values())
     
     # Test specific non-zero components
-    # Γ^r_tt = (r-2)/(2r^3)
+    # Gamma^r_tt = (r-2)/(2r^3)
     assert torch.isclose(
         gamma["r_tt"][0],
         torch.tensor(1/32, device=device)

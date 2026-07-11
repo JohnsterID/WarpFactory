@@ -126,7 +126,7 @@ def test_three_plus_one_decomposition():
             "g_tt": g_tt,
             "g_rr": g_rr,
             "g_theta_theta": r**2,
-            "g_phi_phi": r**2 * np.sin(np.pi/4)**2  # at θ = π/4
+            "g_phi_phi": r**2 * np.sin(np.pi/4)**2  # at theta = pi/4
         }
     
     r = np.array([4.0])  # Test at r = 4M

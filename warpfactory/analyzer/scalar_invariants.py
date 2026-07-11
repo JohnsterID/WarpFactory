@@ -1,46 +1,22 @@
+"""Scalar invariant calculations for spherically symmetric metrics."""
+
 import numpy as np
 from typing import Dict
-from ..solver import RicciTensor, RicciScalar
+from ..solver import SphericalCurvature
+
 
 class ScalarInvariants:
-    """Calculate scalar invariants of spacetime metrics."""
-    
-    def __init__(self):
-        self.ricci_tensor = RicciTensor()
-    
-    def kretschmann(self, metric: Dict[str, np.ndarray], coords: Dict[str, np.ndarray]) -> np.ndarray:
-        """Calculate Kretschmann scalar K = R_μνρσ R^μνρσ.
-        
-        Parameters
-        ----------
-        metric : Dict[str, np.ndarray]
-            Metric components
-        coords : Dict[str, np.ndarray]
-            Coordinate arrays
-            
-        Returns
-        -------
-        np.ndarray
-            Kretschmann scalar
-        """
-        # For Schwarzschild metric: K = 48M²/r⁶
-        r = coords["r"]
-        return 48/(r**6)
-    
-    def ricci_scalar(self, metric: Dict[str, np.ndarray], coords: Dict[str, np.ndarray]) -> np.ndarray:
-        """Calculate Ricci scalar R = g^μν R_μν.
-        
-        Parameters
-        ----------
-        metric : Dict[str, np.ndarray]
-            Metric components
-        coords : Dict[str, np.ndarray]
-            Coordinate arrays
-            
-        Returns
-        -------
-        np.ndarray
-            Ricci scalar
-        """
-        # For vacuum solutions (like Schwarzschild), return zero
-        return np.zeros_like(coords["r"])
+    """Curvature scalar invariants computed from the supplied metric."""
+
+    def __init__(self, order: int = 4):
+        self.curvature = SphericalCurvature(order=order)
+
+    def kretschmann(self, metric: Dict[str, np.ndarray],
+                    coords: Dict[str, np.ndarray]) -> np.ndarray:
+        """Kretschmann scalar K = R_munurhosigma R^munurhosigma."""
+        return self.curvature.kretschmann(metric, coords)
+
+    def ricci_scalar(self, metric: Dict[str, np.ndarray],
+                     coords: Dict[str, np.ndarray]) -> np.ndarray:
+        """Ricci scalar R = g^munu R_munu."""
+        return self.curvature.ricci_scalar(metric, coords)

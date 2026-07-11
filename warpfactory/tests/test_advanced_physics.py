@@ -26,43 +26,48 @@ def alcubierre_setup(spatial_grid):
     
     return components, gamma, (x, y, z)
 
-def test_tidal_forces(alcubierre_setup):
-    """Test tidal force calculations."""
-    components, gamma, (x, y, z) = alcubierre_setup
+def test_tidal_forces():
+    """Tidal forces from geodesic deviation on a well-resolved bubble.
+
+    A sharp wall (sigma=4) is required so the tanh profile actually
+    reaches vacuum inside the grid; the wide sigma=0.5 bubble from the
+    shared fixture extends past x=5 and its far field is not zero.
+    """
+    x = np.linspace(-5, 5, 400)
+    y = np.zeros_like(x)
+    z = np.zeros_like(x)
+    components = AlcubierreMetric().calculate(x, y, z, 0.0,
+                                              v_s=0.5, R=1.0, sigma=4.0)
+    gamma = ChristoffelSymbols().calculate(components, x, y, z)
+
     tidal = TidalForces()
-    
-    # Calculate tidal forces
     forces = tidal.calculate(components, gamma, x, y, z)
-    
-    # Check structure
+
     assert "radial" in forces
     assert "transverse" in forces
     assert "longitudinal" in forces
-    
-    # Check shapes
-    assert forces["radial"].shape == x.shape
-    assert forces["transverse"].shape == x.shape
-    assert forces["longitudinal"].shape == x.shape
-    
-    # Physical checks
-    # 1. Forces should vanish at infinity (within numerical precision)
-    far_index = -1
-    assert np.allclose(forces["radial"][far_index], 0, atol=1e-8)
-    assert np.allclose(forces["transverse"][far_index], 0, atol=1e-8)
-    
-    # 2. Forces should be approximately antisymmetric at large radius
-    r = 3.0  # Test at r = 3R
-    idx = np.argmin(np.abs(x - r))
-    left = forces["radial"][idx-2:idx].mean()  # Average over small region
-    right = forces["radial"][idx:idx+2].mean()
-    # Test relative antisymmetry: |F(x) + F(-x)| < 2|F(x)|
-    assert np.abs(left + right) < 2 * max(np.abs(left), np.abs(right))
-    
-    # 3. Maximum force location (in positive x region)
-    positive_x = x > 0
-    max_force_location = np.argmax(np.abs(forces["radial"][positive_x]))
-    max_x = x[positive_x][max_force_location]
-    assert 0.5 <= max_x <= 2.0  # Should be near bubble wall
+    for component in forces.values():
+        assert component.shape == x.shape
+
+    # Flat far field: forces vanish away from the bubble
+    assert np.allclose(forces["radial"][:20], 0, atol=1e-6)
+    assert np.allclose(forces["radial"][-20:], 0, atol=1e-6)
+    assert np.allclose(forces["transverse"][:20], 0, atol=1e-6)
+
+    # Forces concentrate at the bubble wall (|x| ~ R)
+    peak_x = np.abs(x[np.argmax(np.abs(forces["radial"]))])
+    assert 0.5 <= peak_x <= 2.0
+
+    # Flat spacetime yields exactly zero tidal forces
+    flat = {
+        "g_tt": -np.ones_like(x),
+        "g_xx": np.ones_like(x),
+        "g_yy": np.ones_like(x),
+        "g_zz": np.ones_like(x)
+    }
+    flat_forces = tidal.calculate(flat, {}, x, y, z)
+    for component in flat_forces.values():
+        assert np.allclose(component, 0.0, atol=1e-12)
 
 def test_causal_structure(alcubierre_setup):
     """Test causal structure analysis."""
@@ -88,55 +93,66 @@ def test_causal_structure(alcubierre_setup):
     assert isinstance(violations, np.ndarray)
     assert violations.dtype == bool
 
-def test_stress_energy_conservation(alcubierre_setup):
-    """Test stress-energy conservation."""
-    components, gamma, (x, y, z) = alcubierre_setup
+def test_stress_energy_conservation():
+    """Covariant divergence of the EFE stress-energy must vanish.
+
+    The Bianchi identity makes this exact in the continuum; on a
+    well-resolved grid the residual is small discretization error, so a
+    tight tolerance is meaningful (the old test used atol=5.0, which
+    could never fail).
+    """
+    x = np.linspace(-5, 5, 400)
+    y = np.zeros_like(x)
+    z = np.zeros_like(x)
+    components = AlcubierreMetric().calculate(x, y, z, 0.0,
+                                              v_s=0.5, R=1.0, sigma=4.0)
+    gamma = ChristoffelSymbols().calculate(components, x, y, z)
     conservation = StressEnergyConservation()
-    
-    # Calculate conservation
+
     div_T = conservation.calculate_divergence(components, gamma, x, y, z)
-    
-    # Check structure
-    assert "t" in div_T  # Time component
-    assert "x" in div_T  # Space components
-    assert "y" in div_T
-    assert "z" in div_T
-    
-    # Conservation should be approximately satisfied
-    # Note: Higher tolerance due to numerical derivatives and normalization
-    assert np.allclose(div_T["t"], 0, atol=5.0)
-    assert np.allclose(div_T["x"], 0, atol=5.0)
-    
-    # Test conservation laws
+
+    assert set(div_T) == {"t", "x", "y", "z"}
+    interior = slice(4, -4)
+    for component in div_T.values():
+        assert np.allclose(component[interior], 0, atol=1e-3)
+
     laws = conservation.check_conservation_laws(components, gamma, x, y, z)
-    assert "energy" in laws
-    assert "momentum" in laws
-    assert isinstance(laws["energy"], bool)
-    assert isinstance(laws["momentum"], bool)
+    assert laws == {"energy": True, "momentum": True}
 
 def test_quantum_effects():
     """Test quantum effect calculations."""
     quantum = QuantumEffects()
     
     # Test parameters
-    surface_gravity = 1.0  # m/s²
+    surface_gravity = 1.0  # m/s^2
     bubble_radius = 100.0  # meters
     
-    # Calculate Hawking-like temperature
+    # Hawking temperature: T = hbar kappa / (2 pi c k_B)
     T_H = quantum.hawking_temperature(surface_gravity)
     assert T_H > 0
     assert isinstance(T_H, float)
+    expected_T = (1.0545718e-34 * surface_gravity /
+                  (2 * np.pi * 299792458.0 * 1.380649e-23))
+    assert np.isclose(T_H, expected_T, rtol=1e-10)
+    # T scales linearly with surface gravity
+    assert np.isclose(quantum.hawking_temperature(2 * surface_gravity),
+                      2 * T_H, rtol=1e-10)
     
     # Calculate particle production rate
     rate = quantum.particle_production_rate(surface_gravity, bubble_radius)
     assert rate >= 0
     assert isinstance(rate, float)
     
-    # Test vacuum polarization
+    # Vacuum polarization: thermal radiation with p = rho/3
     polarization = quantum.vacuum_polarization(surface_gravity, bubble_radius)
     assert isinstance(polarization, dict)
-    assert "energy_density" in polarization
-    assert "pressure" in polarization
+    assert polarization["energy_density"] > 0
+    assert np.isclose(polarization["pressure"],
+                      polarization["energy_density"] / 3, rtol=1e-12)
+    # Radiation constant: rho = pi^2 k_B^4 T^4 / (15 hbar^3 c^3)
+    hbar, c, k_B = 1.0545718e-34, 299792458.0, 1.380649e-23
+    expected_rho = np.pi**2 * k_B**4 * T_H**4 / (15 * hbar**3 * c**3)
+    assert np.isclose(polarization["energy_density"], expected_rho, rtol=1e-10)
     
     # Test backreaction
     backreaction = quantum.estimate_backreaction(surface_gravity, bubble_radius)

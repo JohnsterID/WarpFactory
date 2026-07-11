@@ -90,16 +90,14 @@ class CausalStructure:
         np.ndarray
             Tilt angles in radians
         """
-        g_tt = metric["g_tt"]
         g_tx = metric["g_tx"]
-        
-        # Calculate tilt angle
-        # θ = arctan(g_tx/√(-g_tt)) when g_tt < 0
-        tilt = np.zeros_like(g_tt)
-        mask = g_tt < 0
-        tilt[mask] = np.arctan2(g_tx[mask], np.sqrt(-g_tt[mask]))
-        
-        return tilt
+        g_xx = metric["g_xx"]
+
+        # Null directions in the t-x plane satisfy
+        #   g_tt + 2 g_tx s + g_xx s^2 = 0,  s = dx/dt
+        # so the cone axis slope is (s_+ + s_-)/2 = -g_tx/g_xx and the
+        # tilt angle is its arctangent. Valid in ergo regions too.
+        return np.arctan(-g_tx / g_xx)
     
     def find_causality_violations(self, metric: Dict[str, np.ndarray],
                                 x: np.ndarray, y: np.ndarray,
@@ -125,7 +123,7 @@ class CausalStructure:
         # Calculate determinant
         det = g_tt * g_xx - g_tx**2
         
-        # Violations occur when det ≥ 0 or g_xx ≤ 0
+        # Violations occur when det >= 0 or g_xx <= 0
         violations = (det >= 0) | (g_xx <= 0)
         
         return violations

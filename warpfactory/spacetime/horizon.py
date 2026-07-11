@@ -1,158 +1,122 @@
 """Event horizon finder."""
 
 import numpy as np
-from typing import Dict, List
-from scipy.optimize import fsolve
-from scipy.spatial import ConvexHull
-from scipy.spatial._qhull import QhullError
+from typing import Dict
+
+from .interpolation import MetricLine
+
+
+def _zero_crossings(x: np.ndarray, values: np.ndarray) -> np.ndarray:
+    """Linearly interpolated roots of a sampled function."""
+    sign_change = np.diff(np.signbit(values))
+    idx = np.flatnonzero(sign_change)
+    roots = []
+    for i in idx:
+        x0, x1 = x[i], x[i + 1]
+        v0, v1 = values[i], values[i + 1]
+        roots.append(x0 - v0 * (x1 - x0) / (v1 - v0))
+    return np.array(roots)
+
 
 class HorizonFinder:
-    """Find and analyze event horizons."""
-    
-    def _find_horizon_surface(self, metric: Dict[str, np.ndarray],
-                            x: np.ndarray, y: np.ndarray,
-                            z: np.ndarray, condition: str) -> np.ndarray:
-        """Find a horizon surface using a given condition.
-        
-        Parameters
-        ----------
-        metric : Dict[str, np.ndarray]
-            Metric components
-        x, y, z : np.ndarray
-            Spatial coordinates
-        condition : str
-            Type of horizon to find
-            
-        Returns
-        -------
-        np.ndarray
-            Surface points
-        """
-        # Create 2D grid in xz-plane (y=0)
-        X, Z = np.meshgrid(x, z)
-        Y = np.zeros_like(X)
-        
-        # Calculate horizon condition
-        if condition == "outer":
-            # Outer horizon: g_tt = 0
-            values = np.interp(X.flatten(), x, metric["g_tt"]).reshape(X.shape)
-        elif condition == "inner":
-            # Inner horizon: det(g) = 0
-            g_tt = np.interp(X.flatten(), x, metric["g_tt"]).reshape(X.shape)
-            g_tx = np.interp(X.flatten(), x, metric.get("g_tx", np.zeros_like(x))).reshape(X.shape)
-            g_xx = np.interp(X.flatten(), x, metric.get("g_xx", np.ones_like(x))).reshape(X.shape)
-            values = g_tt * g_xx - g_tx**2
-        else:  # ergosphere
-            # Ergosphere: g_tt > 0
-            values = np.interp(X.flatten(), x, metric["g_tt"]).reshape(X.shape)
-        
-        # Find zero crossings
-        if condition == "ergosphere":
-            mask = values > 0
-        else:
-            mask = np.abs(values) < 1e-6
-        
-        # Extract surface points
-        points = np.column_stack([
-            X[mask], Y[mask], Z[mask]
+    """Find and analyze horizon-like surfaces on the x line.
+
+    On a stationary 1-D axial slice the detectable surfaces are:
+
+    * "ergosphere": where g_tt changes sign (coordinate-static observers
+      cease to be timelike)
+    * "outer"/"inner": outermost/innermost roots of the t-x block
+      determinant g_tt g_xx - g_tx^2 (the light cone closes in x)
+
+    Surfaces are returned as rings in the xz-plane around each root, the
+    revolution of the crossing point about the x axis being the natural
+    completion for the axially symmetric metrics used here.
+    """
+
+    N_RING = 32
+
+    def _ring(self, x_root: float) -> np.ndarray:
+        """Closed circular ring of radius |x_root| in the xz-plane."""
+        theta = np.linspace(0.0, 2 * np.pi, self.N_RING + 1)
+        radius = abs(x_root)
+        return np.column_stack([
+            radius * np.cos(theta),
+            np.zeros_like(theta),
+            radius * np.sin(theta)
         ])
-        
-        # Order points to form a closed surface
-        if len(points) > 3:
-            try:
-                # Project to xz-plane and find convex hull
-                xy_points = points[:, [0, 2]]
-                hull = ConvexHull(xy_points)
-                ordered_points = points[hull.vertices]
-                
-                # Add first point at end to close the surface
-                ordered_points = np.vstack([ordered_points, ordered_points[0]])
-                points = ordered_points
-            except (ValueError, QhullError):
-                # If convex hull fails, order points by angle
-                center = np.mean(points, axis=0)
-                angles = np.arctan2(points[:, 2] - center[2],
-                                  points[:, 0] - center[0])
-                order = np.argsort(angles)
-                points = points[order]
-                points = np.vstack([points, points[0]])
-        
-        return points
-    
+
     def find_horizons(self, metric: Dict[str, np.ndarray],
-                     x: np.ndarray, y: np.ndarray,
-                     z: np.ndarray) -> Dict[str, np.ndarray]:
-        """Find all horizons in spacetime.
-        
+                      x: np.ndarray, y: np.ndarray,
+                      z: np.ndarray) -> Dict[str, np.ndarray]:
+        """Find horizon surfaces.
+
         Parameters
         ----------
         metric : Dict[str, np.ndarray]
             Metric components
         x, y, z : np.ndarray
             Spatial coordinates
-            
+
         Returns
         -------
         Dict[str, np.ndarray]
-            Horizon surfaces
+            "outer", "inner", "ergosphere" surfaces (each (N, 3) points,
+            closed, or empty when absent)
         """
-        horizons = {}
-        
-        # Find each type of horizon
-        for horizon_type in ["outer", "inner", "ergosphere"]:
-            surface = self._find_horizon_surface(metric, x, y, z, horizon_type)
-            horizons[horizon_type] = surface
-        
+        x = np.asarray(x, dtype=float)
+        g_tt = np.asarray(metric["g_tt"], dtype=float)
+        g_tx = np.asarray(metric.get("g_tx", np.zeros_like(x)), dtype=float)
+        g_xx = np.asarray(metric.get("g_xx", np.ones_like(x)), dtype=float)
+
+        ergo_roots = _zero_crossings(x, g_tt)
+        det_roots = _zero_crossings(x, g_tt * g_xx - g_tx**2)
+
+        horizons = {
+            "outer": np.array([]),
+            "inner": np.array([]),
+            "ergosphere": np.array([]),
+        }
+        if len(ergo_roots) > 0:
+            horizons["ergosphere"] = self._ring(np.max(np.abs(ergo_roots)))
+        if len(det_roots) > 0:
+            horizons["outer"] = self._ring(np.max(np.abs(det_roots)))
+            if len(det_roots) > 1:
+                horizons["inner"] = self._ring(np.min(np.abs(det_roots)))
         return horizons
-    
+
     def analyze_horizons(self, metric: Dict[str, np.ndarray],
-                        horizons: Dict[str, np.ndarray]) -> Dict[str, float]:
-        """Analyze horizon properties.
-        
-        Parameters
-        ----------
-        metric : Dict[str, np.ndarray]
-            Metric components
-        horizons : Dict[str, np.ndarray]
-            Horizon surfaces
-            
+                         horizons: Dict[str, np.ndarray]) -> Dict[str, float]:
+        """Analyze properties of the found horizons.
+
         Returns
         -------
         Dict[str, float]
-            Horizon properties
+            "area" (of the outer ring's disk of revolution),
+            "surface_gravity" kappa = |d_x g_tt| / (2 sqrt(g_xx |g_tt|'s
+            regular part)) evaluated at the outer root, and
+            "angular_velocity" omega = -g_tx / g_tt there
         """
-        properties = {}
-        
-        # Calculate area (if outer horizon exists)
-        if len(horizons["outer"]) > 0:
-            points = horizons["outer"]
-            try:
-                # Project to xz-plane for area calculation
-                hull = ConvexHull(points[:, [0, 2]])
-                properties["area"] = hull.area
-            except (ValueError, QhullError):
-                properties["area"] = 0.0
-            
-            # Calculate surface gravity
-            # κ = 1/(2√-g) ∂_r√(-g_tt)
-            r = np.sqrt(points[0, 0]**2 + points[0, 2]**2)
-            dr = 1e-6
-            x = np.linspace(-5, 5, len(metric["g_tt"]))
-            g_tt_plus = np.interp(r + dr, np.abs(x), metric["g_tt"])
-            g_tt_minus = np.interp(r - dr, np.abs(x), metric["g_tt"])
-            kappa = abs((np.sqrt(-g_tt_plus) - np.sqrt(-g_tt_minus))/(2*dr))
-            properties["surface_gravity"] = float(kappa)
-            
-            # Calculate angular velocity (if rotating)
-            if "g_tx" in metric:
-                omega = -metric["g_tx"]/metric["g_tt"]
-                idx = np.argmin(np.abs(x - points[0, 0]))
-                properties["angular_velocity"] = float(omega[idx])
-            else:
-                properties["angular_velocity"] = 0.0
-        else:
-            properties["area"] = 0.0
-            properties["surface_gravity"] = 0.0
-            properties["angular_velocity"] = 0.0
-        
+        properties = {"area": 0.0, "surface_gravity": 0.0,
+                      "angular_velocity": 0.0}
+        outer = horizons.get("outer")
+        reference = outer if outer is not None and len(outer) > 0 \
+            else horizons.get("ergosphere")
+        if reference is None or len(reference) == 0:
+            return properties
+
+        radius = float(np.max(np.linalg.norm(reference[:, [0, 2]], axis=1)))
+        properties["area"] = 4 * np.pi * radius**2
+
+        line = MetricLine(metric)
+        dx = 1e-5
+        g_p = line.tensor_at(radius + dx)
+        g_m = line.tensor_at(radius - dx)
+        g_0 = line.tensor_at(radius)
+        dgtt_dx = (g_p[0, 0] - g_m[0, 0]) / (2 * dx)
+        g_xx_val = g_0[1, 1]
+        properties["surface_gravity"] = float(
+            abs(dgtt_dx) / (2 * np.sqrt(abs(g_xx_val))))
+
+        if abs(g_0[0, 0]) > 1e-12:
+            properties["angular_velocity"] = float(-g_0[0, 1] / g_0[0, 0])
         return properties

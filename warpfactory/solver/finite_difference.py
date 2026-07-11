@@ -1,72 +1,77 @@
+"""Finite difference methods for numerical derivatives.
+
+Mirrors the MATLAB takeFiniteDifference1/takeFiniteDifference2 utilities:
+central differences of selectable order (2nd or 4th) on uniform grids,
+applicable along any axis of an N-dimensional field.
+"""
+
 import numpy as np
 
+
+def _grid_spacing(x: np.ndarray) -> float:
+    if len(x) > 1:
+        return x[1] - x[0]
+    return 1.0
+
+
 class FiniteDifference:
-    """Finite difference methods for numerical derivatives."""
-    
+    """Finite difference derivatives on uniform grids.
+
+    Parameters
+    ----------
+    order : int
+        Accuracy order of the interior stencil, 2 or 4. The original
+        MATLAB solver defaults to 4th order; 2nd order matches its
+        'second' option.
+    """
+
+    def __init__(self, order: int = 2):
+        if order not in (2, 4):
+            raise ValueError("order must be 2 or 4")
+        self.order = order
+
     def derivative1(self, f: np.ndarray, x: np.ndarray, axis: int = 0) -> np.ndarray:
-        """Calculate first derivative using central differences.
-        
-        Parameters
-        ----------
-        f : np.ndarray
-            Function values
-        x : np.ndarray
-            Coordinate values
-        axis : int, optional
-            Axis along which to take derivative
-            
-        Returns
-        -------
-        np.ndarray
-            First derivative df/dx
-        """
-        dx = x[1] - x[0]  # Assume uniform grid
-        
-        # Use central differences for interior points
-        # For better accuracy, use explicit central difference formula
-        df = np.zeros_like(f)
-        
-        # Interior points
-        df[1:-1] = (f[2:] - f[:-2]) / (2 * dx)
-        
-        # Forward difference at left boundary
-        df[0] = (f[1] - f[0]) / dx
-        
-        # Backward difference at right boundary
-        df[-1] = (f[-1] - f[-2]) / dx
-        
-        return df
-    
+        """First derivative df/dx along the given axis."""
+        dx = _grid_spacing(x)
+        f = np.asarray(f, dtype=float)
+        if f.shape[axis] < 2:
+            return np.zeros_like(f)
+
+        moved = np.moveaxis(f, axis, 0)
+        df = np.empty_like(moved)
+
+        if self.order == 4 and moved.shape[0] >= 5:
+            df[2:-2] = (moved[:-4] - 8*moved[1:-3] + 8*moved[3:-1] - moved[4:]) / (12*dx)
+            df[1] = (moved[2] - moved[0]) / (2*dx)
+            df[-2] = (moved[-1] - moved[-3]) / (2*dx)
+        else:
+            df[1:-1] = (moved[2:] - moved[:-2]) / (2*dx)
+        df[0] = (moved[1] - moved[0]) / dx
+        df[-1] = (moved[-1] - moved[-2]) / dx
+        return np.moveaxis(df, 0, axis)
+
     def derivative2(self, f: np.ndarray, x: np.ndarray, axis: int = 0) -> np.ndarray:
-        """Calculate second derivative using central differences.
-        
-        Parameters
-        ----------
-        f : np.ndarray
-            Function values
-        x : np.ndarray
-            Coordinate values
-        axis : int, optional
-            Axis along which to take derivative
-            
-        Returns
-        -------
-        np.ndarray
-            Second derivative d²f/dx²
-        """
-        dx = x[1] - x[0]  # Assume uniform grid
-        
-        # Initialize output array
-        d2f = np.zeros_like(f)
-        
-        # Use central differences for interior points
-        # d²f/dx² ≈ (f[i+1] - 2f[i] + f[i-1])/dx²
-        d2f[1:-1] = (f[2:] - 2*f[1:-1] + f[:-2]) / dx**2
-        
-        # Forward difference for left boundary
-        d2f[0] = (f[2] - 2*f[1] + f[0]) / dx**2
-        
-        # Backward difference for right boundary
-        d2f[-1] = (f[-1] - 2*f[-2] + f[-3]) / dx**2
-        
-        return d2f
+        """Second derivative d2f/dx2 along the given axis."""
+        dx = _grid_spacing(x)
+        f = np.asarray(f, dtype=float)
+        if f.shape[axis] < 3:
+            return np.zeros_like(f)
+
+        moved = np.moveaxis(f, axis, 0)
+        d2f = np.empty_like(moved)
+
+        if self.order == 4 and moved.shape[0] >= 5:
+            d2f[2:-2] = (-moved[:-4] + 16*moved[1:-3] - 30*moved[2:-2]
+                         + 16*moved[3:-1] - moved[4:]) / (12*dx**2)
+            d2f[1] = (moved[2] - 2*moved[1] + moved[0]) / dx**2
+            d2f[-2] = (moved[-1] - 2*moved[-2] + moved[-3]) / dx**2
+        else:
+            d2f[1:-1] = (moved[2:] - 2*moved[1:-1] + moved[:-2]) / dx**2
+        d2f[0] = (moved[2] - 2*moved[1] + moved[0]) / dx**2
+        d2f[-1] = (moved[-1] - 2*moved[-2] + moved[-3]) / dx**2
+        return np.moveaxis(d2f, 0, axis)
+
+    def mixed_derivative2(self, f: np.ndarray, x1: np.ndarray, x2: np.ndarray,
+                          axis1: int, axis2: int) -> np.ndarray:
+        """Mixed second derivative d2f/(dx1 dx2)."""
+        return self.derivative1(self.derivative1(f, x1, axis=axis1), x2, axis=axis2)

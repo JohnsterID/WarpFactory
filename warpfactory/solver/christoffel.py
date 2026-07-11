@@ -1,131 +1,84 @@
-"""Christoffel symbol calculations."""
+"""Christoffel symbol calculations.
+
+Two coordinate modes are supported:
+
+* Cartesian (t, x, y, z): the metric is sampled on a 1-D x line (the y/z
+  arrays give the line's position). Derivatives along t, y, z are not
+  available from such a slice and are treated as zero, which is exact for
+  the stationary axial slices used throughout this package.
+* Spherical (t, r, theta, phi): static spherically symmetric metrics,
+  delegated to SphericalCurvature which differentiates the supplied
+  radial profiles numerically.
+"""
 
 import numpy as np
 from typing import Dict, Optional, Union
 
+from .finite_difference import FiniteDifference
+from .spherical import SphericalCurvature
+from .tensor_utils import COORDS, components_to_tensor, inverse_tensor
+
+
 class ChristoffelSymbols:
-    """Calculate Christoffel symbols."""
-    
+    """Calculate Christoffel symbols Gamma^a_bc = g^{ad}(d_b g_dc + d_c g_db - d_d g_bc)/2."""
+
+    def __init__(self, order: int = 4):
+        self.fd = FiniteDifference(order=order)
+        self.spherical = SphericalCurvature(order=order)
+
     def calculate(self, metric: Dict[str, np.ndarray],
-                 x: Union[np.ndarray, Dict[str, np.ndarray]],
-                 y: Optional[np.ndarray] = None,
-                 z: Optional[np.ndarray] = None) -> Dict[str, np.ndarray]:
+                  x: Union[np.ndarray, Dict[str, np.ndarray]],
+                  y: Optional[np.ndarray] = None,
+                  z: Optional[np.ndarray] = None) -> Dict[str, np.ndarray]:
         """Calculate Christoffel symbols.
-        
+
         Parameters
         ----------
         metric : Dict[str, np.ndarray]
-            Metric components
+            Metric components ("g_tt", "g_tx", ... or "g_rr", ...)
         x : Union[np.ndarray, Dict[str, np.ndarray]]
-            Either x coordinate array (Cartesian) or coordinate dictionary (spherical)
-        y : Optional[np.ndarray]
-            Y coordinate (Cartesian only)
-        z : Optional[np.ndarray]
-            Z coordinate (Cartesian only)
-            
+            Either x coordinate array (Cartesian) or coordinate dict
+            with "r" (and optionally "theta") for spherical metrics
+        y, z : Optional[np.ndarray]
+            Unused for the 1-D slice; retained for API compatibility
+
         Returns
         -------
         Dict[str, np.ndarray]
-            Christoffel symbols
+            Christoffel symbols keyed "a_bc" (upper index first)
         """
         if isinstance(x, dict):
-            # Spherical coordinates
-            return self._calculate_spherical(metric, x)
-        else:
-            # Cartesian coordinates
-            return self._calculate_cartesian(metric, x, y, z)
-    
-    def _calculate_spherical(self, metric: Dict[str, np.ndarray],
-                           coords: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-        """Calculate Christoffel symbols in spherical coordinates."""
-        # Extract coordinates
-        r = coords["r"]
-        theta = coords["theta"]
-        
-        # Extract metric components
-        g_tt = metric["g_tt"]
-        g_rr = metric["g_rr"]
-        g_theta_theta = metric["g_theta_theta"]
-        g_phi_phi = metric["g_phi_phi"]
-        
-        # Calculate derivatives
-        dg_tt_dr = -2 * (2/r**2) / (1 - 2/r)**2
-        dg_rr_dr = 2 * (2/r**2) / (1 - 2/r)**2
-        dg_theta_theta_dr = 2 * r
-        dg_phi_phi_dr = 2 * r * np.sin(theta)**2
-        dg_phi_phi_dtheta = 2 * r**2 * np.sin(theta) * np.cos(theta)
-        
-        # Calculate non-zero Christoffel symbols
-        gamma = {}
-        
-        # t_tr component
-        gamma["t_tr"] = 1/(r*(r - 2))
-        
-        # t_tt component
-        gamma["t_tt"] = np.zeros_like(r)
-        
-        # r_tt component
-        gamma["r_tt"] = (r - 2)/(r**3)  # Corrected formula for Schwarzschild
-        
-        # r_rr component
-        gamma["r_rr"] = -(r - 2)/(r**3)
-        
-        # r_thetatheta component
-        gamma["r_thetatheta"] = -(r - 2)
-        
-        # r_phiphi component
-        gamma["r_phiphi"] = -(r - 2) * np.sin(theta)**2
-        
-        # theta_rtheta component
-        gamma["theta_rtheta"] = 1/r
-        
-        # theta_phiphi component
-        gamma["theta_phiphi"] = -np.sin(theta) * np.cos(theta)
-        
-        # phi_rphi component
-        gamma["phi_rphi"] = 1/r
-        
-        # phi_thetaphi component
-        gamma["phi_thetaphi"] = np.cos(theta)/np.sin(theta)
-        
+            return self.spherical.christoffel(metric, x)
+        return self._calculate_cartesian(metric, x)
+
+    def calculate_array(self, metric: Dict[str, np.ndarray],
+                        x: np.ndarray) -> np.ndarray:
+        """Christoffel symbols as an array of shape (4, 4, 4) + grid."""
+        g = components_to_tensor(metric, "g")
+        g_inv = inverse_tensor(g)
+
+        # Only x-derivatives (index 1) are available on a 1-D slice.
+        dg = np.zeros((4,) + g.shape)
+        for mu in range(4):
+            for nu in range(4):
+                dg[1, mu, nu] = self.fd.derivative1(g[mu, nu], x, axis=0)
+
+        gamma = np.zeros((4, 4, 4) + g.shape[2:])
+        for a in range(4):
+            for b in range(4):
+                for c in range(4):
+                    total = np.zeros(g.shape[2:])
+                    for d in range(4):
+                        total += g_inv[a, d] * (dg[b, d, c] + dg[c, d, b] - dg[d, b, c])
+                    gamma[a, b, c] = 0.5 * total
         return gamma
-    
+
     def _calculate_cartesian(self, metric: Dict[str, np.ndarray],
-                           x: np.ndarray, y: np.ndarray,
-                           z: np.ndarray) -> Dict[str, np.ndarray]:
-        """Calculate Christoffel symbols in Cartesian coordinates."""
-        # Extract metric components
-        g_tt = metric["g_tt"]
-        g_xx = metric["g_xx"]
-        g_yy = metric.get("g_yy", np.ones_like(x))  # Default to flat space
-        g_zz = metric.get("g_zz", np.ones_like(x))  # Default to flat space
-        g_tx = metric.get("g_tx", np.zeros_like(x))
-        g_ty = metric.get("g_ty", np.zeros_like(x))
-        g_tz = metric.get("g_tz", np.zeros_like(x))
-        g_xy = metric.get("g_xy", np.zeros_like(x))
-        g_xz = metric.get("g_xz", np.zeros_like(x))
-        g_yz = metric.get("g_yz", np.zeros_like(x))
-        
-        # Calculate derivatives (finite differences)
-        dx = x[1] - x[0] if len(x) > 1 else 1.0
-        dy = y[1] - y[0] if len(y) > 1 else 1.0
-        dz = z[1] - z[0] if len(z) > 1 else 1.0
-        
-        # Initialize Christoffel symbols
+                             x: np.ndarray) -> Dict[str, np.ndarray]:
+        gamma_array = self.calculate_array(metric, np.asarray(x, dtype=float))
         gamma = {}
-        
-        # Initialize all components to zero
-        for i in ["t", "x", "y", "z"]:
-            for j in ["t", "x", "y", "z"]:
-                gamma[f"{i}_{j}t"] = np.zeros_like(x)
-                gamma[f"{i}_{j}x"] = np.zeros_like(x)
-                gamma[f"{i}_{j}y"] = np.zeros_like(x)
-                gamma[f"{i}_{j}z"] = np.zeros_like(x)
-        
-        # For flat spacetime, most components are zero
-        # Only calculate non-zero components for curved metrics
-        if np.any(np.abs(g_tx) > 1e-10):
-            # Example: Γ^t_tx = -1/(2g_tt) * ∂g_tt/∂x
-            gamma["t_tx"] = -1/(2*g_tt) * np.gradient(g_tt, dx, edge_order=2)
-        
+        for a in range(4):
+            for b in range(4):
+                for c in range(4):
+                    gamma[f"{COORDS[a]}_{COORDS[b]}{COORDS[c]}"] = gamma_array[a, b, c]
         return gamma

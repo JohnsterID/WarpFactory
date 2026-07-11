@@ -30,26 +30,31 @@ class AlcubierreMetric(Metric):
         Dict[str, np.ndarray]
             Metric components
         """
-        # Calculate ship position
         x_s = v_s * t
-        
-        # Calculate r (distance from ship center)
         r = np.sqrt((x - x_s)**2 + y**2 + z**2)
-        
-        # Shape function
-        f = np.exp(-sigma * r**2 / R**2)
-        
-        # Add cutoff for numerical stability
-        f = np.where(r > 5*R, np.zeros_like(f), f)
-        
-        # Calculate metric components
+        f = self.shape_function(r, R, sigma)
+
         v_x = v_s * f
         g_tt = -(1 - v_x**2)
         g_tx = -v_x
-        g_xx = np.ones_like(x)
-        
+
         return {
             "g_tt": g_tt,
             "g_tx": g_tx,
-            "g_xx": g_xx
+            "g_xx": np.ones_like(x),
+            "g_yy": np.ones_like(x),
+            "g_zz": np.ones_like(x)
         }
+
+    @staticmethod
+    def shape_function(r: np.ndarray, R: float, sigma: float) -> np.ndarray:
+        """Canonical Alcubierre top-hat shape function.
+
+        f(r) = [tanh(sigma(r + R)) - tanh(sigma(r - R))] / [2 tanh(sigma R)]
+
+        as defined in Alcubierre (1994) and used by the MATLAB
+        shapeFunction_Alcubierre.m: f -> 1 inside the bubble,
+        f -> 0 far outside.
+        """
+        return ((np.tanh(sigma * (r + R)) - np.tanh(sigma * (r - R)))
+                / (2 * np.tanh(sigma * R)))

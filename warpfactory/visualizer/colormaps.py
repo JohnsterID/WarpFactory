@@ -1,9 +1,29 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import Colormap, LinearSegmentedColormap
 
 class ColorMaps:
     """Custom colormaps for visualization."""
+
+    def get(self, name: str) -> Colormap:
+        """Resolve a colormap by name, checking custom maps first.
+
+        Parameters
+        ----------
+        name : str
+            Custom map name ("redblue", "warp") or any matplotlib name
+
+        Returns
+        -------
+        Colormap
+            Matplotlib colormap instance
+        """
+        if name == "redblue":
+            return self.redblue()
+        if name == "warp":
+            return self.warp()
+        return matplotlib.colormaps[name]
     
     def redblue(self, N: int = 256) -> LinearSegmentedColormap:
         """Create a diverging red-white-blue colormap.
