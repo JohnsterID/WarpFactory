@@ -36,6 +36,9 @@ class SpacetimeTensor:
         Human-readable metric/tensor name
     params : Dict
         Construction parameters recorded by the metric builders
+    frame : str
+        Observer frame of the components; "" for coordinate frame or
+        "eulerian" after do_frame_transfer
     """
 
     tensor: np.ndarray
@@ -45,6 +48,7 @@ class SpacetimeTensor:
     scaling: Tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0)
     name: str = ""
     params: Dict = field(default_factory=dict)
+    frame: str = ""
 
     @property
     def grid_shape(self) -> Tuple[int, ...]:
@@ -120,7 +124,8 @@ def change_tensor_index(input_tensor: SpacetimeTensor, index: str,
         return SpacetimeTensor(
             tensor=new_array, type=input_tensor.type, index=index,
             coords=input_tensor.coords, scaling=input_tensor.scaling,
-            name=input_tensor.name, params=dict(input_tensor.params))
+            name=input_tensor.name, params=dict(input_tensor.params),
+            frame=input_tensor.frame)
 
     if metric is None:
         raise ValueError(
@@ -159,7 +164,8 @@ def change_tensor_index(input_tensor: SpacetimeTensor, index: str,
     return SpacetimeTensor(
         tensor=new_array, type=input_tensor.type, index=index,
         coords=input_tensor.coords, scaling=input_tensor.scaling,
-        name=input_tensor.name, params=dict(input_tensor.params))
+        name=input_tensor.name, params=dict(input_tensor.params),
+        frame=input_tensor.frame)
 
 
 def _metric_both_forms(metric: SpacetimeTensor) -> Tuple[np.ndarray, np.ndarray]:

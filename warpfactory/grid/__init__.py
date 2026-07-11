@@ -4,6 +4,13 @@ Python port of the MATLAB WarpFactory grid workflow (metricGet_* ->
 getEnergyTensor -> plotTensor) in geometric units (G = c = 1).
 """
 
+from .energy_conditions import (
+    do_frame_transfer,
+    eulerian_transformation_matrix,
+    even_points_on_sphere,
+    generate_uniform_field,
+    get_energy_conditions,
+)
 from .interpolation import (
     legendre_radial_interp,
     quadrilinear_interp,
@@ -61,6 +68,11 @@ __all__ = [
     'three_plus_one_decomposer',
     'alcubierre_shape',
     'compact_sigmoid',
+    'get_energy_conditions',
+    'do_frame_transfer',
+    'eulerian_transformation_matrix',
+    'generate_uniform_field',
+    'even_points_on_sphere',
     'trilinear_interp',
     'quadrilinear_interp',
     'legendre_radial_interp',

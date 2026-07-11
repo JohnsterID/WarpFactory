@@ -304,6 +304,14 @@ grid pipeline:
 - Tensor index management (`verify_tensor`, `change_tensor_index`),
   ADM 3+1 composition/decomposition, and the interpolation utilities
   (trilinear, quadrilinear, Legendre radial).
+- Energy-condition violation maps on grids (`get_energy_conditions`,
+  the `getEnergyConditions.m` equivalent): the stress-energy tensor is
+  transformed to the local Eulerian frame via the explicit Cholesky
+  decomposition of the metric (`do_frame_transfer` /
+  `eulerian_transformation_matrix`) and contracted against Fibonacci-
+  lattice-sampled null or timelike observer fields
+  (`generate_uniform_field`), returning the most-violating evaluation
+  at every grid point.
 - Slice plotting (`plot_tensor`, `plot_three_plus_one`).
 
 This is a physics-first port, not a bug-for-bug one. Deliberate
@@ -318,6 +326,12 @@ differences from the MATLAB original:
   the intended construction rather than the MATLAB output.
 - Grid indexing is zero-based; world centers are specified in physical
   coordinates.
+- In `get_energy_conditions`, once components are in the local
+  Eulerian (orthonormal) frame, indices are raised and lowered with the
+  Minkowski metric for all four conditions. `getEnergyConditions.m`
+  lowers with the full coordinate metric for Null/Weak but with
+  Minkowski for Strong/Dominant; that inconsistency is resolved here in
+  favor of the local-frame convention.
 
 The older 1-D axial-slice API (`warpfactory.metrics`,
 `warpfactory.solver`) remains available and unchanged.
