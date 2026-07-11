@@ -32,7 +32,10 @@ class FiniteDifference:
 
     def derivative1(self, f: np.ndarray, x: np.ndarray, axis: int = 0) -> np.ndarray:
         """First derivative df/dx along the given axis."""
-        dx = _grid_spacing(x)
+        return self.derivative1_delta(f, _grid_spacing(x), axis=axis)
+
+    def derivative1_delta(self, f: np.ndarray, dx: float, axis: int = 0) -> np.ndarray:
+        """First derivative with an explicit uniform grid spacing."""
         f = np.asarray(f, dtype=float)
         if f.shape[axis] < 2:
             return np.zeros_like(f)
@@ -52,7 +55,10 @@ class FiniteDifference:
 
     def derivative2(self, f: np.ndarray, x: np.ndarray, axis: int = 0) -> np.ndarray:
         """Second derivative d2f/dx2 along the given axis."""
-        dx = _grid_spacing(x)
+        return self.derivative2_delta(f, _grid_spacing(x), axis=axis)
+
+    def derivative2_delta(self, f: np.ndarray, dx: float, axis: int = 0) -> np.ndarray:
+        """Second derivative with an explicit uniform grid spacing."""
         f = np.asarray(f, dtype=float)
         if f.shape[axis] < 3:
             return np.zeros_like(f)
@@ -74,4 +80,11 @@ class FiniteDifference:
     def mixed_derivative2(self, f: np.ndarray, x1: np.ndarray, x2: np.ndarray,
                           axis1: int, axis2: int) -> np.ndarray:
         """Mixed second derivative d2f/(dx1 dx2)."""
-        return self.derivative1(self.derivative1(f, x1, axis=axis1), x2, axis=axis2)
+        return self.mixed_derivative2_delta(f, _grid_spacing(x1), _grid_spacing(x2),
+                                            axis1, axis2)
+
+    def mixed_derivative2_delta(self, f: np.ndarray, dx1: float, dx2: float,
+                                axis1: int, axis2: int) -> np.ndarray:
+        """Mixed second derivative with explicit uniform grid spacings."""
+        return self.derivative1_delta(
+            self.derivative1_delta(f, dx1, axis=axis1), dx2, axis=axis2)

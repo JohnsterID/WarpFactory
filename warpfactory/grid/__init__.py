@@ -1,0 +1,70 @@
+"""Full 4-D grid pipeline: metrics, EFE solver, index management, plotting.
+
+Python port of the MATLAB WarpFactory grid workflow (metricGet_* ->
+getEnergyTensor -> plotTensor) in geometric units (G = c = 1).
+"""
+
+from .interpolation import (
+    legendre_radial_interp,
+    quadrilinear_interp,
+    trilinear_interp,
+)
+from .metrics import (
+    alcubierre_comoving_metric,
+    alcubierre_metric,
+    lentz_comoving_metric,
+    lentz_metric,
+    minkowski_metric,
+    modified_time_comoving_metric,
+    modified_time_metric,
+    schwarzschild_metric,
+    van_den_broeck_comoving_metric,
+    van_den_broeck_metric,
+)
+from .plotting import get_slice_data, plot_tensor, plot_three_plus_one
+from .shape_functions import alcubierre_shape, compact_sigmoid
+from .solver import GridSolver
+from .tensor import SpacetimeTensor, change_tensor_index, verify_tensor
+from .three_plus_one import (
+    minkowski_three_plus_one,
+    three_plus_one_builder,
+    three_plus_one_decomposer,
+)
+from .warp_shell import (
+    alpha_numeric_solver,
+    sph2cart_diag,
+    tov_constant_density_pressure,
+    warp_shell_comoving_metric,
+)
+
+__all__ = [
+    'SpacetimeTensor',
+    'verify_tensor',
+    'change_tensor_index',
+    'GridSolver',
+    'minkowski_metric',
+    'alcubierre_metric',
+    'alcubierre_comoving_metric',
+    'lentz_metric',
+    'lentz_comoving_metric',
+    'van_den_broeck_metric',
+    'van_den_broeck_comoving_metric',
+    'modified_time_metric',
+    'modified_time_comoving_metric',
+    'schwarzschild_metric',
+    'warp_shell_comoving_metric',
+    'tov_constant_density_pressure',
+    'alpha_numeric_solver',
+    'sph2cart_diag',
+    'minkowski_three_plus_one',
+    'three_plus_one_builder',
+    'three_plus_one_decomposer',
+    'alcubierre_shape',
+    'compact_sigmoid',
+    'trilinear_interp',
+    'quadrilinear_interp',
+    'legendre_radial_interp',
+    'get_slice_data',
+    'plot_tensor',
+    'plot_three_plus_one',
+]

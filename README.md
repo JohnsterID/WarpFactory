@@ -4,15 +4,18 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/warpfactory.svg)](https://badge.fury.io/py/warpfactory)
 
-A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory), a numerical toolkit for analyzing warp drive spacetimes using Einstein's theory of General Relativity. This implementation aims to make the toolkit more accessible to the Python scientific computing community. It is a work in progress and does not yet reach feature parity with the original MATLAB implementation; see "Parity with the MATLAB original" below for the current status.
+A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory), a numerical toolkit for analyzing warp drive spacetimes using Einstein's theory of General Relativity. This implementation aims to make the toolkit more accessible to the Python scientific computing community. It reaches feature parity with the original MATLAB implementation (with a few deliberate physics-first fixes); see "Parity with the MATLAB original" below for details.
 
 ## Key Features
 
 ### Core Functionality
 - Finite difference solver (2nd/4th order) for the stress-energy tensor
-  via the Einstein field equations on 1-D axial slices
+  via the Einstein field equations on full 4-D grids and on 1-D axial
+  slices
 - Christoffel symbol, Ricci tensor/scalar, and Kretschmann scalar
   computation for Cartesian slices and spherically symmetric metrics
+- Tensor index management (covariant, contravariant, mixed) and ADM
+  3+1 composition/decomposition on grids
 - Energy condition evaluations (Null, Weak, Dominant, Strong) by
   pointwise observer sampling
 - Momentum flow visualizations
@@ -25,10 +28,12 @@ A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory
 - Device-agnostic code (CPU/GPU)
 
 ### Available Metrics
-- Alcubierre warp drive
-- Lentz positive-energy warp drive
-- Van Den Broeck bubble with volume expansion
-- Warp Shell configuration
+- Alcubierre warp drive (lab and comoving frames)
+- Lentz positive-energy warp drive (lab and comoving frames)
+- Van Den Broeck bubble with volume expansion (lab and comoving frames)
+- Modified Time warp drive (lab and comoving frames)
+- TOV-based comoving Warp Shell (Helmerich & Fuchs, CQG 2024)
+- Schwarzschild black hole
 - Minkowski (flat spacetime)
 - Custom metric support via base class
 
@@ -285,22 +290,37 @@ metric_cpu = {k: v.cpu() for k, v in metric.items()}
 
 ## Parity with the MATLAB original
 
-This port does not yet reproduce the full MATLAB WarpFactory pipeline.
-Known gaps relative to the original:
+The `warpfactory.grid` package implements the full MATLAB WarpFactory
+grid pipeline:
 
-- Metrics are evaluated on 1-D axial slices rather than full 4-D grids,
-  and comoving metric variants (AlcubierreComoving, LentzComoving,
-  VanDenBroeckComoving, the TOV-based WarpShellComoving) are not
-  implemented. Schwarzschild and ModifiedTime metrics are also absent.
-- The stress-energy solver supports 1-D slices only; the MATLAB
-  met2den/met2den2 solvers operate on full 3-D spatial grids.
-- Tensor index management (verifyTensor, changeTensorIndex) and the
-  interpolation utilities (trilinear, quadrilinear, Legendre radial)
-  have no Python equivalents yet.
-- Visualization is basic compared to plotTensor/plotThreePlusOne.
+- Metric builders on full (t, x, y, z) grids: Minkowski, Alcubierre,
+  Lentz, Van Den Broeck, Modified Time (each with a Galilean comoving
+  variant), Schwarzschild, and the TOV-based comoving Warp Shell
+  (`metricGet_*` equivalents).
+- Stress-energy solver on 4-D grids at 2nd or 4th finite-difference
+  order (`met2den`/`met2den2`/`getEnergyTensor` equivalents), validated
+  against the analytic Alcubierre Eulerian energy density and the
+  Schwarzschild vacuum.
+- Tensor index management (`verify_tensor`, `change_tensor_index`),
+  ADM 3+1 composition/decomposition, and the interpolation utilities
+  (trilinear, quadrilinear, Legendre radial).
+- Slice plotting (`plot_tensor`, `plot_three_plus_one`).
 
-Results from the WarpFactory papers should be reproduced with the
-original MATLAB toolkit until these gaps are closed.
+This is a physics-first port, not a bug-for-bug one. Deliberate
+differences from the MATLAB original:
+
+- Geometric units (G = c = 1) throughout: the bubble center moves as
+  `xs = v*t` and the solver returns `T = G_munu / 8 pi` (MATLAB scales
+  time derivatives by 1/c and multiplies by c^4/8piG for J/m^3).
+- The Modified Time metric fixes the indexing bugs present in
+  `metricGet_ModifiedTime.m` (undefined `gridScale`, wrong axis scale
+  indices, and a `(t,i,k,k)` symmetric-assignment typo), so it produces
+  the intended construction rather than the MATLAB output.
+- Grid indexing is zero-based; world centers are specified in physical
+  coordinates.
+
+The older 1-D axial-slice API (`warpfactory.metrics`,
+`warpfactory.solver`) remains available and unchanged.
 
 ## License
 

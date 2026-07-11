@@ -61,8 +61,9 @@ def tensor_to_components(tensor: np.ndarray,
 
 
 def inverse_tensor(tensor: np.ndarray) -> np.ndarray:
-    """Pointwise inverse of a (4, 4) + grid_shape tensor field."""
+    """Pointwise inverse of an (n, n) + grid_shape tensor field."""
+    n = tensor.shape[0]
     grid_shape = tensor.shape[2:]
-    stacked = np.moveaxis(tensor.reshape(4, 4, -1), -1, 0)
+    stacked = np.moveaxis(tensor.reshape(n, n, -1), -1, 0)
     inverted = np.linalg.inv(stacked)
-    return np.moveaxis(inverted, 0, -1).reshape((4, 4) + grid_shape)
+    return np.moveaxis(inverted, 0, -1).reshape((n, n) + grid_shape)
