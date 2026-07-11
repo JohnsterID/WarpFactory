@@ -29,6 +29,7 @@ from .metrics import (
     van_den_broeck_metric,
 )
 from .plotting import get_slice_data, plot_tensor, plot_three_plus_one
+from .scalars import eulerian_velocity, get_scalars
 from .shape_functions import alcubierre_shape, compact_sigmoid
 from .si_units import (
     si_energy_factor,
@@ -73,6 +74,8 @@ __all__ = [
     'three_plus_one_decomposer',
     'alcubierre_shape',
     'compact_sigmoid',
+    'get_scalars',
+    'eulerian_velocity',
     'si_energy_factor',
     'stress_energy_to_si',
     'stress_energy_to_geometric',

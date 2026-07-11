@@ -312,6 +312,11 @@ grid pipeline:
   lattice-sampled null or timelike observer fields
   (`generate_uniform_field`), returning the most-violating evaluation
   at every grid point.
+- Kinematic scalars of the Eulerian congruence (`get_scalars`, the
+  `getScalars.m` equivalent): expansion, shear, and vorticity computed
+  from the finite-difference covariant derivative of the normal
+  observer 4-velocity, validated against the analytic Alcubierre
+  expansion theta = v (x - xs)/r df/dr.
 - SI conversion at the API boundary (`stress_energy_to_si`,
   `si_energy_factor`): multiply geometric-unit stress-energy (1/m^2)
   by c^4/G to get J/m^3 for direct comparison with the MATLAB output
