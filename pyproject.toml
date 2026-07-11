@@ -73,10 +73,3 @@ module = [
     "torch.*"
 ]
 ignore_missing_imports = true
-
-[tool.poetry.scripts]
-lint = "poetry run pylint warpfactory"
-typecheck = "poetry run mypy warpfactory"
-format = "poetry run black . && poetry run isort ."
-check = "poetry run black --check . && poetry run isort --check-only . && poetry run flake8 . && poetry run mypy warpfactory && poetry run pylint warpfactory"
-test = "poetry run pytest --cov=warpfactory"

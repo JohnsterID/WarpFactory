@@ -52,3 +52,6 @@ docs/_build/
 # Agent memory
 AGENTS.md
 
+
+# Generated example figures
+examples/*.png

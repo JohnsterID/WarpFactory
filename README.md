@@ -2,7 +2,6 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI version](https://badge.fury.io/py/warpfactory.svg)](https://badge.fury.io/py/warpfactory)
 
 A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory), a numerical toolkit for analyzing warp drive spacetimes using Einstein's theory of General Relativity. This implementation aims to make the toolkit more accessible to the Python scientific computing community. It reaches feature parity with the original MATLAB implementation (with a few deliberate physics-first fixes); see "Parity with the MATLAB original" below for details.
 
@@ -69,11 +68,8 @@ A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory
 
 ### Using pip
 ```bash
-# Install from PyPI
-pip install warpfactory
-
-# Install from source
-git clone https://github.com/YourUsername/WarpFactory.git
+# Install from source (not yet published on PyPI)
+git clone https://github.com/JohnsterID/WarpFactory.git
 cd WarpFactory
 pip install .
 ```
@@ -84,7 +80,7 @@ pip install .
 pip install poetry
 
 # Install dependencies and package
-git clone https://github.com/YourUsername/WarpFactory.git
+git clone https://github.com/JohnsterID/WarpFactory.git
 cd WarpFactory
 poetry install
 ```

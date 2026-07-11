@@ -1,0 +1,31 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install core dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy scipy matplotlib pytest pytest-cov
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install package
+        # --no-deps: dependencies are installed explicitly above so the
+        # PyQt6 pin in pyproject.toml is not pulled in (GUI tests skip).
+        run: pip install --no-deps .
+      - name: Run tests
+        run: pytest warpfactory/tests -q --no-cov
