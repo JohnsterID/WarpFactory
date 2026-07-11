@@ -37,8 +37,19 @@ A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory
 - Minkowski (flat spacetime)
 - Custom metric support via base class
 
+### Parameter Search and Optimization
+- Ansatz abstraction wrapping any metric builder into a searchable
+  parametrized family (`warpfactory.optimize`)
+- Energy-condition scoring of configurations (integrated exotic
+  matter, total Eulerian energy, NEC/WEC validity)
+- Cartesian-product parameter scans
+- Derivative-free exotic-matter minimization (Nelder-Mead, Powell)
+  with custom objectives and per-evaluation callbacks
+
 ### Analysis Tools
 - Three-plus-one (ADM) decomposition
+- Kinematic scalars: expansion, shear, vorticity of the Eulerian
+  congruence
 - Frame transformations and boosts
 - Christoffel symbol calculations
 - Ricci tensor and scalar computations
