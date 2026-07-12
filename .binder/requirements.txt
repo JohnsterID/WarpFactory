@@ -1,0 +1,3 @@
+# repo2docker environment specification: install the package (with the
+# notebook extra) so examples/interactive_explorer.ipynb runs on Binder.
+.[jupyter]
