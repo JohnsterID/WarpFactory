@@ -100,6 +100,25 @@ class SphericalCurvature:
             + dA**2 / (2 * A**2 * B)
         )
 
+    def ricci_squared(
+        self, metric: Dict[str, np.ndarray], coords: Dict[str, np.ndarray]
+    ) -> np.ndarray:
+        """Ricci tensor square R_munu R^munu.
+
+        The metric is diagonal, so R_munu R^munu = sum_mu (R_mumu / g_mumu)^2.
+        The phi-phi term equals the theta-theta term because both
+        R_phi_phi and g_phi_phi carry the same sin^2(theta) factor.
+        """
+        ricci = self.ricci_tensor(metric, coords)
+        A = -np.asarray(metric["g_tt"], dtype=float)
+        B = np.asarray(metric["g_rr"], dtype=float)
+        C = np.asarray(metric["g_theta_theta"], dtype=float)
+        return (
+            (ricci["R_tt"] / A) ** 2
+            + (ricci["R_rr"] / B) ** 2
+            + 2 * (ricci["R_theta_theta"] / C) ** 2
+        )
+
     def kretschmann(
         self, metric: Dict[str, np.ndarray], coords: Dict[str, np.ndarray]
     ) -> np.ndarray:

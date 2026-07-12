@@ -156,3 +156,88 @@ def test_scalar_invariants():
     # Ricci scalar vanishes for the vacuum solution
     R = invariants.ricci_scalar(metric, coords)
     assert np.allclose(R[5:-5], 0.0, atol=1e-5)
+
+
+def _schwarzschild_spherical(r, theta):
+    return {
+        "g_tt": -(1 - 2 / r),
+        "g_rr": 1 / (1 - 2 / r),
+        "g_theta_theta": r**2,
+        "g_phi_phi": r**2 * np.sin(theta) ** 2,
+    }
+
+
+def test_gauss_bonnet_schwarzschild():
+    """For vacuum (R = R_munu = 0) the Gauss-Bonnet invariant equals the
+    Kretschmann scalar: G = K = 48 M^2 / r^6 with M = 1."""
+    invariants = ScalarInvariants()
+    r = np.linspace(3.0, 10.0, 141)
+    theta = np.full_like(r, np.pi / 2)
+    metric = _schwarzschild_spherical(r, theta)
+    coords = {"r": r, "theta": theta}
+
+    GB = invariants.gauss_bonnet(metric, coords)
+    idx = np.argmin(np.abs(r - 4.0))
+    assert np.isclose(GB[idx], 48 / (4**6), rtol=1e-4)
+
+    assert np.allclose(invariants.ricci_squared(metric, coords)[5:-5], 0.0, atol=1e-8)
+
+
+def test_gauss_bonnet_de_sitter():
+    """Static-patch de Sitter analytics: R = 12 H^2, R_munu R^munu = 36 H^4,
+    K = 24 H^4, hence G = 144 H^4 - 144 H^4 + 24 H^4 = 24 H^4."""
+    invariants = ScalarInvariants()
+    H = 0.1
+    r = np.linspace(0.5, 5.0, 181)
+    theta = np.full_like(r, np.pi / 2)
+    metric = {
+        "g_tt": -(1 - H**2 * r**2),
+        "g_rr": 1 / (1 - H**2 * r**2),
+        "g_theta_theta": r**2,
+        "g_phi_phi": r**2 * np.sin(theta) ** 2,
+    }
+    coords = {"r": r, "theta": theta}
+
+    sl = slice(5, -5)
+    assert np.allclose(
+        invariants.ricci_scalar(metric, coords)[sl], 12 * H**2, rtol=1e-5
+    )
+    assert np.allclose(
+        invariants.ricci_squared(metric, coords)[sl], 36 * H**4, rtol=1e-5
+    )
+    assert np.allclose(invariants.kretschmann(metric, coords)[sl], 24 * H**4, rtol=1e-5)
+    assert np.allclose(
+        invariants.gauss_bonnet(metric, coords)[sl], 24 * H**4, rtol=1e-4
+    )
+
+
+def test_eft_validity_watchdog():
+    """EFT watchdog flags trans-cutoff curvature and passes mild curvature.
+
+    Schwarzschild with M = 1 in geometric length units: L = K^(-1/4) =
+    48^(-1/4) r^(3/2), epsilon = cutoff^2 sqrt(48)/r^3.
+    """
+    invariants = ScalarInvariants()
+    r = np.linspace(3.0, 10.0, 141)
+    theta = np.full_like(r, np.pi / 2)
+    metric = _schwarzschild_spherical(r, theta)
+    coords = {"r": r, "theta": theta}
+    interior = slice(5, -5)
+
+    idx = np.argmin(np.abs(r - 4.0))
+    expected_eps = np.sqrt(48.0) / 4.0**3
+
+    # Cutoff comparable to the horizon scale: epsilon = sqrt(48)/r^3
+    # crosses the 1e-2 threshold at r = (100 sqrt(48))^(1/3) ~ 8.85, so
+    # near-horizon points are flagged invalid and far points pass.
+    report = invariants.eft_validity(metric, coords, cutoff_length=1.0)
+    assert np.isclose(report["expansion_parameter"][idx], expected_eps, rtol=1e-4)
+    assert np.isclose(
+        report["curvature_radius"][idx], 48.0**-0.25 * 4.0**1.5, rtol=1e-4
+    )
+    assert not report["valid"][r < 8.0].any()
+    assert report["valid"][r > 9.5].all()
+
+    # Cutoff a million times smaller than the curvature radius: valid.
+    report = invariants.eft_validity(metric, coords, cutoff_length=1e-6)
+    assert report["valid"][interior].all()
