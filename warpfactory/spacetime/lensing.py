@@ -18,28 +18,6 @@ class GravitationalLensing:
     normalized to the local light cone.
     """
 
-    def _null_velocity(
-        self, line: MetricLine, position: np.ndarray, direction: np.ndarray
-    ) -> np.ndarray:
-        """Scale a spatial direction onto the future light cone.
-
-        Solves g_tt + 2 g_ti (s n^i) + g_ij (s n^i)(s n^j) = 0 for the
-        larger root s > 0 (future-directed ray along +n).
-        """
-        g = line.tensor_at(position[0])
-        n = direction / np.linalg.norm(direction)
-        a = n @ g[1:, 1:] @ n
-        b = 2.0 * (g[0, 1:] @ n)
-        c = g[0, 0]
-        disc = b * b - 4 * a * c
-        if disc < 0:
-            raise ValueError(
-                "No null direction along the requested spatial "
-                f"direction at x={position[0]:.3f}"
-            )
-        s = (-b + np.sqrt(disc)) / (2 * a)
-        return s * n
-
     def _setup_ray_bundle(
         self,
         source_pos: np.ndarray,
@@ -76,7 +54,7 @@ class GravitationalLensing:
 
     def _propagate_ray(self, line: MetricLine, ray: Dict, dt: float = 0.1) -> None:
         """Advance a ray by coordinate time dt along its null geodesic."""
-        velocity = self._null_velocity(line, ray["position"], ray["direction"])
+        velocity = line.null_velocity(ray["position"], ray["direction"])
 
         def rhs(t, y):
             pos, vel = y[:3], y[3:]

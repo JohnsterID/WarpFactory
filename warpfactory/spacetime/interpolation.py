@@ -79,6 +79,27 @@ class MetricLine:
                     gamma[a, b, c] = 0.5 * total
         return gamma
 
+    def null_velocity(self, position: np.ndarray, direction: np.ndarray) -> np.ndarray:
+        """Coordinate velocity of a light ray along a spatial direction.
+
+        Scales the unit direction n onto the future light cone by
+        solving g_tt + 2 g_ti (s n^i) + g_ij (s n^i)(s n^j) = 0 for the
+        larger root s > 0 (future-directed ray along +n).
+        """
+        g = self.tensor_at(position[0])
+        n = direction / np.linalg.norm(direction)
+        a = n @ g[1:, 1:] @ n
+        b = 2.0 * (g[0, 1:] @ n)
+        c = g[0, 0]
+        disc = b * b - 4 * a * c
+        if disc < 0:
+            raise ValueError(
+                "No null direction along the requested spatial "
+                f"direction at x={position[0]:.3f}"
+            )
+        s = (-b + np.sqrt(disc)) / (2 * a)
+        return s * n
+
     def coordinate_acceleration(
         self, position: np.ndarray, velocity: np.ndarray
     ) -> np.ndarray:

@@ -1,5 +1,6 @@
 """Spacetime analysis tools."""
 
+from .cmb_hazard import CMBBlueshiftHazard
 from .geodesic import GeodesicSolver
 from .horizon import HorizonFinder
 from .lensing import GravitationalLensing
@@ -10,4 +11,5 @@ __all__ = [
     "HorizonFinder",
     "SingularityDetector",
     "GravitationalLensing",
+    "CMBBlueshiftHazard",
 ]
