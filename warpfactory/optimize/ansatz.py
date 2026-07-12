@@ -26,7 +26,8 @@ class Ansatz(ABC):
         if unknown:
             raise ValueError(
                 f"{self.name}: unknown parameters {sorted(unknown)}; "
-                f"expected a subset of {list(self.param_names)}")
+                f"expected a subset of {list(self.param_names)}"
+            )
 
 
 class CallableAnsatz(Ansatz):
@@ -43,9 +44,12 @@ class CallableAnsatz(Ansatz):
         Display name; defaults to the builder's __name__
     """
 
-    def __init__(self, builder: Callable[..., SpacetimeTensor],
-                 param_names: Sequence[str],
-                 name: Optional[str] = None):
+    def __init__(
+        self,
+        builder: Callable[..., SpacetimeTensor],
+        param_names: Sequence[str],
+        name: Optional[str] = None,
+    ):
         self.builder = builder
         self.param_names = tuple(param_names)
         self.name = name or getattr(builder, "__name__", "callable")

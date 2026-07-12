@@ -1,8 +1,10 @@
 """Test configuration and shared fixtures."""
 
 import os
-import pytest
+
 import numpy as np
+import pytest
+
 from warpfactory.metrics import MinkowskiMetric
 from warpfactory.units import Constants
 
@@ -32,8 +34,8 @@ def spatial_grid():
 def metric_params():
     """Standard metric parameters for testing."""
     return {
-        "v_s": 2.0,    # ship velocity (in c)
-        "R": 1.0,      # radius of warp bubble
+        "v_s": 2.0,  # ship velocity (in c)
+        "R": 1.0,  # radius of warp bubble
         "sigma": 0.5,  # thickness parameter
     }
 
@@ -68,9 +70,9 @@ def test_metric_components():
 def test_energy_tensor():
     """Create test energy-momentum tensor components."""
     x = np.linspace(-1, 1, 10)
-    rho = np.exp(-x**2)  # Energy density
-    p = rho/3  # Pressure (radiation equation of state)
-    
+    rho = np.exp(-(x**2))  # Energy density
+    p = rho / 3  # Pressure (radiation equation of state)
+
     return {
         "T_tt": rho,
         "T_xx": p,

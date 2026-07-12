@@ -1,10 +1,11 @@
 """Singularity detection and analysis."""
 
-import numpy as np
 from typing import Dict, List
 
+import numpy as np
+
 from ..solver import RicciScalar, RiemannTensor
-from .interpolation import X_MIN, X_MAX
+from .interpolation import X_MAX, X_MIN
 
 
 class SingularityDetector:
@@ -24,8 +25,9 @@ class SingularityDetector:
     def _grid(self, metric: Dict[str, np.ndarray]) -> np.ndarray:
         return np.linspace(X_MIN, X_MAX, len(np.asarray(metric["g_tt"])))
 
-    def calculate_invariants(self, metric: Dict[str, np.ndarray],
-                             position: np.ndarray) -> Dict[str, float]:
+    def calculate_invariants(
+        self, metric: Dict[str, np.ndarray], position: np.ndarray
+    ) -> Dict[str, float]:
         """Curvature invariants interpolated at a position.
 
         Parameters
@@ -48,27 +50,28 @@ class SingularityDetector:
             "kretschmann": float(np.interp(position[0], x, K)),
         }
 
-    def _classify_singularity(self, metric: Dict[str, np.ndarray],
-                              position: np.ndarray) -> str:
+    def _classify_singularity(
+        self, metric: Dict[str, np.ndarray], position: np.ndarray
+    ) -> str:
         """Classify by the local metric signature."""
         x = self._grid(metric)
         g_tt = float(np.interp(position[0], x, metric["g_tt"]))
-        g_xx = float(np.interp(position[0], x,
-                               metric.get("g_xx", np.ones_like(x))))
+        g_xx = float(np.interp(position[0], x, metric.get("g_xx", np.ones_like(x))))
         if g_tt > 0:
             return "spacelike"
         if g_xx < 0:
             return "timelike"
         return "null"
 
-    def _calculate_strength(self, metric: Dict[str, np.ndarray],
-                            position: np.ndarray) -> float:
+    def _calculate_strength(
+        self, metric: Dict[str, np.ndarray], position: np.ndarray
+    ) -> float:
         inv = self.calculate_invariants(metric, position)
         return float(np.sqrt(abs(inv["ricci_scalar"]) + abs(inv["kretschmann"])))
 
-    def find_singularities(self, metric: Dict[str, np.ndarray],
-                           x: np.ndarray, y: np.ndarray,
-                           z: np.ndarray) -> Dict[str, List]:
+    def find_singularities(
+        self, metric: Dict[str, np.ndarray], x: np.ndarray, y: np.ndarray, z: np.ndarray
+    ) -> Dict[str, List]:
         """Locate curvature singularities along the x line.
 
         Parameters
@@ -88,8 +91,12 @@ class SingularityDetector:
             R = self.ricci_scalar.calculate(metric, {"x": x})
             K = self.riemann.kretschmann(metric, x)
 
-        blown_up = (~np.isfinite(R)) | (~np.isfinite(K)) \
-            | (np.abs(R) > self.threshold) | (np.abs(K) > self.threshold)
+        blown_up = (
+            (~np.isfinite(R))
+            | (~np.isfinite(K))
+            | (np.abs(R) > self.threshold)
+            | (np.abs(K) > self.threshold)
+        )
         indices = np.flatnonzero(blown_up)
 
         # Cluster contiguous flagged points into single candidates
@@ -109,8 +116,4 @@ class SingularityDetector:
         types = [self._classify_singularity(metric, pos) for pos in locations]
         strengths = [self._calculate_strength(metric, pos) for pos in locations]
 
-        return {
-            "locations": locations,
-            "types": types,
-            "strengths": strengths
-        }
+        return {"locations": locations, "types": types, "strengths": strengths}

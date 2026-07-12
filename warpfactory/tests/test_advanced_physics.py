@@ -3,16 +3,18 @@
 import subprocess
 import sys
 
-import pytest
 import numpy as np
-from warpfactory.physics import (
-    TidalForces,
-    CausalStructure,
-    StressEnergyConservation,
-    QuantumEffects
-)
+import pytest
+
 from warpfactory.metrics import AlcubierreMetric
+from warpfactory.physics import (
+    CausalStructure,
+    QuantumEffects,
+    StressEnergyConservation,
+    TidalForces,
+)
 from warpfactory.solver import ChristoffelSymbols
+
 
 @pytest.fixture
 def alcubierre_setup(spatial_grid):
@@ -21,12 +23,13 @@ def alcubierre_setup(spatial_grid):
     t = 0.0
     metric = AlcubierreMetric()
     components = metric.calculate(x, y, z, t, v_s=2.0, R=1.0, sigma=0.5)
-    
+
     # Calculate Christoffel symbols
     christoffel = ChristoffelSymbols()
     gamma = christoffel.calculate(components, x, y, z)
-    
+
     return components, gamma, (x, y, z)
+
 
 def test_tidal_forces():
     """Tidal forces from geodesic deviation on a well-resolved bubble.
@@ -38,8 +41,7 @@ def test_tidal_forces():
     x = np.linspace(-5, 5, 400)
     y = np.zeros_like(x)
     z = np.zeros_like(x)
-    components = AlcubierreMetric().calculate(x, y, z, 0.0,
-                                              v_s=0.5, R=1.0, sigma=4.0)
+    components = AlcubierreMetric().calculate(x, y, z, 0.0, v_s=0.5, R=1.0, sigma=4.0)
     gamma = ChristoffelSymbols().calculate(components, x, y, z)
 
     tidal = TidalForces()
@@ -65,35 +67,37 @@ def test_tidal_forces():
         "g_tt": -np.ones_like(x),
         "g_xx": np.ones_like(x),
         "g_yy": np.ones_like(x),
-        "g_zz": np.ones_like(x)
+        "g_zz": np.ones_like(x),
     }
     flat_forces = tidal.calculate(flat, {}, x, y, z)
     for component in flat_forces.values():
         assert np.allclose(component, 0.0, atol=1e-12)
 
+
 def test_causal_structure(alcubierre_setup):
     """Test causal structure analysis."""
     components, _, (x, y, z) = alcubierre_setup
     causal = CausalStructure()
-    
+
     # Find horizons
     horizons = causal.find_horizons(components, x, y, z)
     assert len(horizons["inner"]) > 0
     assert len(horizons["outer"]) > 0
-    
+
     # Classify regions
     regions = causal.classify_regions(components, x, y, z)
     unique_regions = np.unique(regions)
     assert all(r in ["normal", "ergo", "trapped"] for r in unique_regions)
-    
+
     # Check light cone tilting
     tilts = causal.light_cone_tilt(components, x, y, z)
-    assert np.all(np.abs(tilts) <= np.pi/2)  # Tilt angle should be bounded
-    
+    assert np.all(np.abs(tilts) <= np.pi / 2)  # Tilt angle should be bounded
+
     # Test causality violation detection
     violations = causal.find_causality_violations(components, x, y, z)
     assert isinstance(violations, np.ndarray)
     assert violations.dtype == bool
+
 
 def test_stress_energy_conservation():
     """Covariant divergence of the EFE stress-energy must vanish.
@@ -106,8 +110,7 @@ def test_stress_energy_conservation():
     x = np.linspace(-5, 5, 400)
     y = np.zeros_like(x)
     z = np.zeros_like(x)
-    components = AlcubierreMetric().calculate(x, y, z, 0.0,
-                                              v_s=0.5, R=1.0, sigma=4.0)
+    components = AlcubierreMetric().calculate(x, y, z, 0.0, v_s=0.5, R=1.0, sigma=4.0)
     gamma = ChristoffelSymbols().calculate(components, x, y, z)
     conservation = StressEnergyConservation()
 
@@ -121,46 +124,51 @@ def test_stress_energy_conservation():
     laws = conservation.check_conservation_laws(components, gamma, x, y, z)
     assert laws == {"energy": True, "momentum": True}
 
+
 def test_quantum_effects():
     """Test quantum effect calculations."""
     quantum = QuantumEffects()
-    
+
     # Test parameters
     surface_gravity = 1.0  # m/s^2
     bubble_radius = 100.0  # meters
-    
+
     # Hawking temperature: T = hbar kappa / (2 pi c k_B)
     T_H = quantum.hawking_temperature(surface_gravity)
     assert T_H > 0
     assert isinstance(T_H, float)
-    expected_T = (1.0545718e-34 * surface_gravity /
-                  (2 * np.pi * 299792458.0 * 1.380649e-23))
+    expected_T = (
+        1.0545718e-34 * surface_gravity / (2 * np.pi * 299792458.0 * 1.380649e-23)
+    )
     assert np.isclose(T_H, expected_T, rtol=1e-10)
     # T scales linearly with surface gravity
-    assert np.isclose(quantum.hawking_temperature(2 * surface_gravity),
-                      2 * T_H, rtol=1e-10)
-    
+    assert np.isclose(
+        quantum.hawking_temperature(2 * surface_gravity), 2 * T_H, rtol=1e-10
+    )
+
     # Calculate particle production rate
     rate = quantum.particle_production_rate(surface_gravity, bubble_radius)
     assert rate >= 0
     assert isinstance(rate, float)
-    
+
     # Vacuum polarization: thermal radiation with p = rho/3
     polarization = quantum.vacuum_polarization(surface_gravity, bubble_radius)
     assert isinstance(polarization, dict)
     assert polarization["energy_density"] > 0
-    assert np.isclose(polarization["pressure"],
-                      polarization["energy_density"] / 3, rtol=1e-12)
+    assert np.isclose(
+        polarization["pressure"], polarization["energy_density"] / 3, rtol=1e-12
+    )
     # Radiation constant: rho = pi^2 k_B^4 T^4 / (15 hbar^3 c^3)
     hbar, c, k_B = 1.0545718e-34, 299792458.0, 1.380649e-23
     expected_rho = np.pi**2 * k_B**4 * T_H**4 / (15 * hbar**3 * c**3)
     assert np.isclose(polarization["energy_density"], expected_rho, rtol=1e-10)
-    
+
     # Test backreaction
     backreaction = quantum.estimate_backreaction(surface_gravity, bubble_radius)
     assert isinstance(backreaction, dict)
     assert "metric_correction" in backreaction
     assert "lifetime" in backreaction
+
 
 def test_physics_imports_without_torch():
     """warpfactory.physics must work when torch is not installed.
@@ -177,9 +185,11 @@ def test_physics_imports_without_torch():
         "T = q.hawking_temperature(1.0)\n"
         "assert T > 0\n"
     )
-    result = subprocess.run([sys.executable, "-c", script],
-                            capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True
+    )
     assert result.returncode == 0, result.stderr
+
 
 @pytest.mark.gpu
 def test_gpu_quantum_effects():
@@ -187,28 +197,26 @@ def test_gpu_quantum_effects():
     torch = pytest.importorskip("torch", reason="torch is not installed")
     if not torch.cuda.is_available():
         pytest.skip("CUDA not available")
-    
+
     quantum = QuantumEffects(device="cuda")
-    
+
     # Create batch of parameters
     surface_gravity = torch.linspace(0.1, 2.0, 100, device="cuda")
     bubble_radius = torch.full_like(surface_gravity, 100.0)
-    
+
     # Batch calculate Hawking temperature
     T_H = quantum.hawking_temperature_batch(surface_gravity)
     assert T_H.device.type == "cuda"
     assert torch.all(T_H > 0)
-    
+
     # Batch calculate particle production
     rates = quantum.particle_production_batch(surface_gravity, bubble_radius)
     assert rates.device.type == "cuda"
     assert torch.all(rates >= 0)
-    
+
     # Test vacuum polarization with gradients
     surface_gravity.requires_grad = True
-    polarization = quantum.vacuum_polarization_batch(
-        surface_gravity, bubble_radius
-    )
+    polarization = quantum.vacuum_polarization_batch(surface_gravity, bubble_radius)
     loss = polarization["energy_density"].mean()
     loss.backward()
     assert surface_gravity.grad is not None

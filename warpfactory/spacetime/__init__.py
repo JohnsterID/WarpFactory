@@ -2,12 +2,12 @@
 
 from .geodesic import GeodesicSolver
 from .horizon import HorizonFinder
-from .singularity import SingularityDetector
 from .lensing import GravitationalLensing
+from .singularity import SingularityDetector
 
 __all__ = [
-    'GeodesicSolver',
-    'HorizonFinder',
-    'SingularityDetector',
-    'GravitationalLensing',
+    "GeodesicSolver",
+    "HorizonFinder",
+    "SingularityDetector",
+    "GravitationalLensing",
 ]

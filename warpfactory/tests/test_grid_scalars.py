@@ -13,7 +13,7 @@ from warpfactory.grid.shape_functions import alcubierre_shape
 
 
 def centered_world(grid_size, spacing=1.0):
-    return (0.0,) + tuple((n - 1)*spacing/2 for n in grid_size[1:])
+    return (0.0,) + tuple((n - 1) * spacing / 2 for n in grid_size[1:])
 
 
 @pytest.fixture(scope="module")
@@ -22,9 +22,10 @@ def alcubierre_setup():
     grid_size = (1, n, n, n)
     world_center = centered_world(grid_size, h)
     v, R, sigma = 2.0, 3.0, 2.0
-    metric = alcubierre_metric(grid_size, world_center, v=v, R=R,
-                               sigma=sigma, grid_scale=(1, h, h, h))
-    coords = np.arange(n)*h - world_center[1]
+    metric = alcubierre_metric(
+        grid_size, world_center, v=v, R=R, sigma=sigma, grid_scale=(1, h, h, h)
+    )
+    coords = np.arange(n) * h - world_center[1]
     return metric, coords, (v, R, sigma)
 
 
@@ -66,23 +67,24 @@ class TestGetScalars:
 
         X, Y, Z = np.meshgrid(coords, coords, coords, indexing="ij")
         r = np.sqrt(X**2 + Y**2 + Z**2)
-        dfdr = (alcubierre_shape(r + 1e-6, R, sigma)
-                - alcubierre_shape(r - 1e-6, R, sigma))/2e-6
-        theta_analytic = v*X/np.maximum(r, 1e-12)*dfdr
+        dfdr = (
+            alcubierre_shape(r + 1e-6, R, sigma) - alcubierre_shape(r - 1e-6, R, sigma)
+        ) / 2e-6
+        theta_analytic = v * X / np.maximum(r, 1e-12) * dfdr
 
-        interior = (slice(4, -4),)*3
+        interior = (slice(4, -4),) * 3
         num = expansion[0][interior]
         ana = theta_analytic[interior]
-        assert np.abs(num - ana).max()/np.abs(ana).max() < 0.05
+        assert np.abs(num - ana).max() / np.abs(ana).max() < 0.05
 
     def test_alcubierre_front_contracts_back_expands(self, alcubierre_setup):
         # Volume elements contract ahead of the bubble (x > 0 half,
         # where df/dr < 0 and (x-xs) > 0) and expand behind it.
         metric, coords, _ = alcubierre_setup
         expansion, _, _ = get_scalars(metric)
-        mid = len(coords)//2
-        front = expansion[0, mid + 8:, mid, mid]
-        back = expansion[0, :mid - 8, mid, mid]
+        mid = len(coords) // 2
+        front = expansion[0, mid + 8 :, mid, mid]
+        back = expansion[0, : mid - 8, mid, mid]
         assert front.min() < -1e-3
         assert back.max() > 1e-3
 
@@ -103,13 +105,18 @@ class TestGetScalars:
     def test_second_order_agrees_with_fourth(self):
         n, h = 32, 0.5
         grid_size = (1, n, n, n)
-        metric = alcubierre_metric(grid_size, centered_world(grid_size, h),
-                                   v=2.0, R=3.0, sigma=2.0,
-                                   grid_scale=(1, h, h, h))
+        metric = alcubierre_metric(
+            grid_size,
+            centered_world(grid_size, h),
+            v=2.0,
+            R=3.0,
+            sigma=2.0,
+            grid_scale=(1, h, h, h),
+        )
         e2, _, _ = get_scalars(metric, order=2)
         e4, _, _ = get_scalars(metric, order=4)
         interior = (slice(None), slice(4, -4), slice(4, -4), slice(4, -4))
         scale = np.abs(e4[interior]).max()
         # The sigma = 2 wall is barely resolved at h = 0.5, so the two
         # FD orders agree only to truncation error (~10% here).
-        assert np.abs(e2[interior] - e4[interior]).max() < 0.15*scale
+        assert np.abs(e2[interior] - e4[interior]).max() < 0.15 * scale

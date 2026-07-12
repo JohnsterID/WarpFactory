@@ -11,8 +11,9 @@ Two coordinate modes are supported:
   radial profiles numerically.
 """
 
-import numpy as np
 from typing import Dict, Optional, Union
+
+import numpy as np
 
 from .finite_difference import FiniteDifference
 from .spherical import SphericalCurvature
@@ -26,10 +27,13 @@ class ChristoffelSymbols:
         self.fd = FiniteDifference(order=order)
         self.spherical = SphericalCurvature(order=order)
 
-    def calculate(self, metric: Dict[str, np.ndarray],
-                  x: Union[np.ndarray, Dict[str, np.ndarray]],
-                  y: Optional[np.ndarray] = None,
-                  z: Optional[np.ndarray] = None) -> Dict[str, np.ndarray]:
+    def calculate(
+        self,
+        metric: Dict[str, np.ndarray],
+        x: Union[np.ndarray, Dict[str, np.ndarray]],
+        y: Optional[np.ndarray] = None,
+        z: Optional[np.ndarray] = None,
+    ) -> Dict[str, np.ndarray]:
         """Calculate Christoffel symbols.
 
         Parameters
@@ -51,8 +55,9 @@ class ChristoffelSymbols:
             return self.spherical.christoffel(metric, x)
         return self._calculate_cartesian(metric, x)
 
-    def calculate_array(self, metric: Dict[str, np.ndarray],
-                        x: np.ndarray) -> np.ndarray:
+    def calculate_array(
+        self, metric: Dict[str, np.ndarray], x: np.ndarray
+    ) -> np.ndarray:
         """Christoffel symbols as an array of shape (4, 4, 4) + grid."""
         g = components_to_tensor(metric, "g")
         g_inv = inverse_tensor(g)
@@ -73,8 +78,9 @@ class ChristoffelSymbols:
                     gamma[a, b, c] = 0.5 * total
         return gamma
 
-    def _calculate_cartesian(self, metric: Dict[str, np.ndarray],
-                             x: np.ndarray) -> Dict[str, np.ndarray]:
+    def _calculate_cartesian(
+        self, metric: Dict[str, np.ndarray], x: np.ndarray
+    ) -> Dict[str, np.ndarray]:
         gamma_array = self.calculate_array(metric, np.asarray(x, dtype=float))
         gamma = {}
         for a in range(4):

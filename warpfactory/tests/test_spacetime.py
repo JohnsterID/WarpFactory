@@ -1,14 +1,15 @@
 """Test spacetime analysis features."""
 
-import pytest
 import numpy as np
+import pytest
+
+from warpfactory.metrics import AlcubierreMetric
 from warpfactory.spacetime import (
     GeodesicSolver,
     HorizonFinder,
     SingularityDetector,
-    GravitationalLensing
 )
-from warpfactory.metrics import AlcubierreMetric
+
 
 @pytest.fixture
 def alcubierre_setup(spatial_grid):
@@ -18,6 +19,7 @@ def alcubierre_setup(spatial_grid):
     metric = AlcubierreMetric()
     components = metric.calculate(x, y, z, t, v_s=2.0, R=1.0, sigma=0.5)
     return components, (x, y, z)
+
 
 def test_geodesic_solver(alcubierre_setup):
     """Test geodesic equation solver."""
@@ -31,9 +33,7 @@ def test_geodesic_solver(alcubierre_setup):
     v0 = np.array([0.5, 0.0, 0.0])
 
     times, positions, velocities = solver.solve(
-        components, t0, x0, v0,
-        t_max=10.0,
-        dt=0.1
+        components, t0, x0, v0, t_max=10.0, dt=0.1
     )
 
     assert len(times) > 0
@@ -53,32 +53,34 @@ def test_geodesic_solver(alcubierre_setup):
     # 3. Energy is conserved along the geodesic (stationary metric slice).
     # Tolerance is set by linear interpolation of the metric on the
     # coarse 50-point fixture grid, not by the integrator (rtol 1e-8).
-    energies = np.array([
-        solver.calculate_energy(components, positions[i], velocities[i])
-        for i in range(len(times))
-    ])
+    energies = np.array(
+        [
+            solver.calculate_energy(components, positions[i], velocities[i])
+            for i in range(len(times))
+        ]
+    )
     assert np.allclose(energies, energies[0], rtol=1e-4)
 
     # 4. Unphysical (spacelike) initial data must be rejected.
     # Note +1.0 along x is actually timelike here due to frame dragging
     # inside the wide bubble; moving against the drag is spacelike.
     with pytest.raises(ValueError):
-        solver.solve(components, t0, x0, np.array([-1.0, 0.0, 0.0]),
-                     t_max=1.0, dt=0.1)
+        solver.solve(components, t0, x0, np.array([-1.0, 0.0, 0.0]), t_max=1.0, dt=0.1)
 
 
 def test_geodesic_flat_spacetime():
     """Geodesics in Minkowski spacetime are straight lines."""
     from warpfactory.metrics import MinkowskiMetric
+
     x = np.linspace(-5, 5, 100)
-    components = MinkowskiMetric().calculate(x, np.zeros_like(x),
-                                             np.zeros_like(x), 0.0)
+    components = MinkowskiMetric().calculate(x, np.zeros_like(x), np.zeros_like(x), 0.0)
     solver = GeodesicSolver()
 
     x0 = np.array([-3.0, 0.0, 0.0])
     v0 = np.array([0.5, 0.2, 0.0])
-    times, positions, velocities = solver.solve(components, 0.0, x0, v0,
-                                                t_max=5.0, dt=0.1)
+    times, positions, velocities = solver.solve(
+        components, 0.0, x0, v0, t_max=5.0, dt=0.1
+    )
 
     expected = x0[np.newaxis, :] + times[:, np.newaxis] * v0[np.newaxis, :]
     assert np.allclose(positions, expected, atol=1e-9)
@@ -116,11 +118,13 @@ def test_horizon_finder(alcubierre_setup):
 
     # Flat spacetime: no surfaces, zeroed properties
     from warpfactory.metrics import MinkowskiMetric
+
     flat = MinkowskiMetric().calculate(x, y, z, 0.0)
     flat_horizons = finder.find_horizons(flat, x, y, z)
     assert all(len(s) == 0 for s in flat_horizons.values())
     flat_props = finder.analyze_horizons(flat, flat_horizons)
     assert flat_props["area"] == 0.0
+
 
 def test_singularity_detector_positive():
     """Detector must find a genuine curvature singularity.
@@ -134,12 +138,7 @@ def test_singularity_detector_positive():
     y = np.zeros_like(x)
     z = np.zeros_like(x)
     C = x**2 + 1e-4
-    metric = {
-        "g_tt": -np.ones_like(x),
-        "g_xx": np.ones_like(x),
-        "g_yy": C,
-        "g_zz": C
-    }
+    metric = {"g_tt": -np.ones_like(x), "g_xx": np.ones_like(x), "g_yy": C, "g_zz": C}
 
     detector = SingularityDetector()
     result = detector.find_singularities(metric, x, y, z)
@@ -153,37 +152,36 @@ def test_singularity_detector_positive():
         "g_tt": -np.ones_like(x),
         "g_xx": np.ones_like(x),
         "g_yy": np.ones_like(x),
-        "g_zz": np.ones_like(x)
+        "g_zz": np.ones_like(x),
     }
     assert len(detector.find_singularities(flat, x, y, z)["locations"]) == 0
+
 
 def test_singularity_detector(alcubierre_setup):
     """Test singularity detection."""
     components, (x, y, z) = alcubierre_setup
     detector = SingularityDetector()
-    
+
     # Find singularities
     singularities = detector.find_singularities(components, x, y, z)
-    
+
     # Check structure
     assert "locations" in singularities
     assert "types" in singularities
     assert "strengths" in singularities
     assert len(singularities["locations"]) == len(singularities["types"])
-    
+
     # Analyze singularity properties (if any found)
     if len(singularities["locations"]) > 0:
         # Check if curvature invariants exist
         invariants = detector.calculate_invariants(
-            components,
-            singularities["locations"][0]
+            components, singularities["locations"][0]
         )
         assert "kretschmann" in invariants
         assert "ricci_scalar" in invariants
-        
+
         # Type classification should be valid
         assert singularities["types"][0] in ["spacelike", "timelike", "null"]
-        
+
         # Strength should be positive
         assert singularities["strengths"][0] >= 0
-

@@ -24,14 +24,26 @@ def trilinear_interp(field: np.ndarray, position) -> float:
     hi = np.clip(lo + 1, 0, np.array(field.shape) - 1)
     frac = pos - lo
 
-    c00 = field[lo[0], lo[1], lo[2]]*(1 - frac[0]) + field[hi[0], lo[1], lo[2]]*frac[0]
-    c01 = field[lo[0], lo[1], hi[2]]*(1 - frac[0]) + field[hi[0], lo[1], hi[2]]*frac[0]
-    c10 = field[lo[0], hi[1], lo[2]]*(1 - frac[0]) + field[hi[0], hi[1], lo[2]]*frac[0]
-    c11 = field[lo[0], hi[1], hi[2]]*(1 - frac[0]) + field[hi[0], hi[1], hi[2]]*frac[0]
+    c00 = (
+        field[lo[0], lo[1], lo[2]] * (1 - frac[0])
+        + field[hi[0], lo[1], lo[2]] * frac[0]
+    )
+    c01 = (
+        field[lo[0], lo[1], hi[2]] * (1 - frac[0])
+        + field[hi[0], lo[1], hi[2]] * frac[0]
+    )
+    c10 = (
+        field[lo[0], hi[1], lo[2]] * (1 - frac[0])
+        + field[hi[0], hi[1], lo[2]] * frac[0]
+    )
+    c11 = (
+        field[lo[0], hi[1], hi[2]] * (1 - frac[0])
+        + field[hi[0], hi[1], hi[2]] * frac[0]
+    )
 
-    c0 = c00*(1 - frac[1]) + c10*frac[1]
-    c1 = c01*(1 - frac[1]) + c11*frac[1]
-    return float(c0*(1 - frac[2]) + c1*frac[2])
+    c0 = c00 * (1 - frac[1]) + c10 * frac[1]
+    c1 = c01 * (1 - frac[1]) + c11 * frac[1]
+    return float(c0 * (1 - frac[2]) + c1 * frac[2])
 
 
 def quadrilinear_interp(field: np.ndarray, position) -> float:
@@ -49,7 +61,7 @@ def quadrilinear_interp(field: np.ndarray, position) -> float:
         return c_lo
     c_hi = trilinear_interp(field[t_hi], pos[1:])
     frac = pos[0] - t_lo
-    return c_lo*(1 - frac) + c_hi*frac
+    return c_lo * (1 - frac) + c_hi * frac
 
 
 def legendre_radial_interp(values: np.ndarray, r) -> np.ndarray:
@@ -74,8 +86,8 @@ def legendre_radial_interp(values: np.ndarray, r) -> np.ndarray:
     y0, y1, y2, y3 = sample(x0), sample(x1), sample(x2), sample(x3)
 
     return (
-        y0*(r - x1)*(r - x2)*(r - x3)/((x0 - x1)*(x0 - x2)*(x0 - x3))
-        + y1*(r - x0)*(r - x2)*(r - x3)/((x1 - x0)*(x1 - x2)*(x1 - x3))
-        + y2*(r - x0)*(r - x1)*(r - x3)/((x2 - x0)*(x2 - x1)*(x2 - x3))
-        + y3*(r - x0)*(r - x1)*(r - x2)/((x3 - x0)*(x3 - x1)*(x3 - x2))
+        y0 * (r - x1) * (r - x2) * (r - x3) / ((x0 - x1) * (x0 - x2) * (x0 - x3))
+        + y1 * (r - x0) * (r - x2) * (r - x3) / ((x1 - x0) * (x1 - x2) * (x1 - x3))
+        + y2 * (r - x0) * (r - x1) * (r - x3) / ((x2 - x0) * (x2 - x1) * (x2 - x3))
+        + y3 * (r - x0) * (r - x1) * (r - x2) / ((x3 - x0) * (x3 - x1) * (x3 - x2))
     )

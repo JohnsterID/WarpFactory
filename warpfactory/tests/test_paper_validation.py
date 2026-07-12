@@ -34,15 +34,15 @@ ALCUBIERRE_PAPER = {"v": 0.1, "R": 300.0, "sigma": 0.015}
 
 
 def centered_world(grid_size, spacing):
-    return (0.0,) + tuple((n - 1)*spacing/2 for n in grid_size[1:])
+    return (0.0,) + tuple((n - 1) * spacing / 2 for n in grid_size[1:])
 
 
 def solve_alcubierre(n=64, h=12.5):
     grid_size = (1, n, n, n)
     world_center = centered_world(grid_size, h)
-    metric = alcubierre_metric(grid_size, world_center,
-                               grid_scale=(1, h, h, h),
-                               **ALCUBIERRE_PAPER)
+    metric = alcubierre_metric(
+        grid_size, world_center, grid_scale=(1, h, h, h), **ALCUBIERRE_PAPER
+    )
     return metric, GridSolver(order=4).solve(metric)
 
 
@@ -67,8 +67,7 @@ class TestSIConversion:
     def test_double_conversion_is_noop(self, alcubierre_paper_setup):
         _, T = alcubierre_paper_setup
         T_si = stress_energy_to_si(T)
-        np.testing.assert_array_equal(stress_energy_to_si(T_si).tensor,
-                                      T_si.tensor)
+        np.testing.assert_array_equal(stress_energy_to_si(T_si).tensor, T_si.tensor)
 
     def test_rejects_metric_tensors(self, alcubierre_paper_setup):
         metric, _ = alcubierre_paper_setup
@@ -90,10 +89,12 @@ class TestAlcubierrePaperSection41:
         rho_si = stress_energy_to_si(do_frame_transfer(metric, T)).tensor[0, 0]
 
         r = np.linspace(200.0, 400.0, 20001)
-        dfdr = np.gradient(alcubierre_shape(r, **{
-            k: ALCUBIERRE_PAPER[k] for k in ("R", "sigma")}), r)
-        analytic_peak = (-ALCUBIERRE_PAPER["v"]**2 * dfdr**2
-                         / (32.0*np.pi)).min() * si_energy_factor()
+        dfdr = np.gradient(
+            alcubierre_shape(r, **{k: ALCUBIERRE_PAPER[k] for k in ("R", "sigma")}), r
+        )
+        analytic_peak = (
+            -(ALCUBIERRE_PAPER["v"] ** 2) * dfdr**2 / (32.0 * np.pi)
+        ).min() * si_energy_factor()
 
         assert analytic_peak == pytest.approx(-6.775e35, rel=1e-3)
         assert rho_si.min() == pytest.approx(analytic_peak, rel=0.02)
@@ -105,7 +106,7 @@ class TestAlcubierrePaperSection41:
 
         n, h = 64, 12.5
         world_center = centered_world((1, n, n, n), h)
-        ax = np.arange(n)*h - world_center[1]
+        ax = np.arange(n) * h - world_center[1]
         X, Y, Z = np.meshgrid(ax, ax, ax, indexing="ij")
         r = np.sqrt(X**2 + Y**2 + Z**2)
 
@@ -114,17 +115,15 @@ class TestAlcubierrePaperSection41:
         peak_magnitude = -rho[wall].min()
         assert peak_magnitude > 1e-10
         # Density in the wall dominates the interior by orders of magnitude.
-        assert np.abs(rho[deep_interior]).max() < 1e-3*peak_magnitude
+        assert np.abs(rho[deep_interior]).max() < 1e-3 * peak_magnitude
 
-    @pytest.mark.parametrize("condition", ["Null", "Weak", "Dominant",
-                                           "Strong"])
-    def test_table1_all_conditions_violated(self, alcubierre_paper_setup,
-                                            condition):
+    @pytest.mark.parametrize("condition", ["Null", "Weak", "Dominant", "Strong"])
+    def test_table1_all_conditions_violated(self, alcubierre_paper_setup, condition):
         """Table 1: the Alcubierre metric violates all four conditions."""
         metric, T = alcubierre_paper_setup
-        violation = get_energy_conditions(T, metric, condition,
-                                          num_angular_vec=50,
-                                          num_time_vec=8)
+        violation = get_energy_conditions(
+            T, metric, condition, num_angular_vec=50, num_time_vec=8
+        )
         # Violations must be at the physical scale of the wall density
         # (~ -5.6e-9 1/m^2 geometric), far above FD noise.
         assert violation.min() < -1e-10
@@ -136,14 +135,21 @@ class TestVanDenBroeckPaperSection42:
         n, h = 48, 10.0
         grid_size = (1, n, n, n)
         metric = van_den_broeck_metric(
-            grid_size, centered_world(grid_size, h), v=0.1,
-            R1=100.0, sigma1=0.06, R2=180.0, sigma2=0.06, A=2.0,
-            grid_scale=(1, h, h, h))
+            grid_size,
+            centered_world(grid_size, h),
+            v=0.1,
+            R1=100.0,
+            sigma1=0.06,
+            R2=180.0,
+            sigma2=0.06,
+            A=2.0,
+            grid_scale=(1, h, h, h),
+        )
         T = GridSolver(order=4).solve(metric)
         for condition in ("Null", "Weak"):
-            violation = get_energy_conditions(T, metric, condition,
-                                              num_angular_vec=30,
-                                              num_time_vec=5)
+            violation = get_energy_conditions(
+                T, metric, condition, num_angular_vec=30, num_time_vec=5
+            )
             assert violation.min() < -1e-8, condition
 
 
@@ -153,11 +159,17 @@ class TestModifiedTimePaperSection43:
         n, h = 48, 12.5
         grid_size = (1, n, n, n)
         metric = modified_time_metric(
-            grid_size, centered_world(grid_size, h), v=0.1, A=0.5,
-            R=300.0, sigma=0.015, grid_scale=(1, h, h, h))
+            grid_size,
+            centered_world(grid_size, h),
+            v=0.1,
+            A=0.5,
+            R=300.0,
+            sigma=0.015,
+            grid_scale=(1, h, h, h),
+        )
         T = GridSolver(order=4).solve(metric)
         for condition in ("Null", "Weak"):
-            violation = get_energy_conditions(T, metric, condition,
-                                              num_angular_vec=30,
-                                              num_time_vec=5)
+            violation = get_energy_conditions(
+                T, metric, condition, num_angular_vec=30, num_time_vec=5
+            )
             assert violation.min() < -1e-8, condition

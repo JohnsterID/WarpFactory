@@ -12,10 +12,10 @@ from .evaluate import EvaluationResult, evaluate_ansatz
 from .search import minimize_exotic_matter, scan_parameters
 
 __all__ = [
-    'Ansatz',
-    'CallableAnsatz',
-    'EvaluationResult',
-    'evaluate_ansatz',
-    'scan_parameters',
-    'minimize_exotic_matter',
+    "Ansatz",
+    "CallableAnsatz",
+    "EvaluationResult",
+    "evaluate_ansatz",
+    "scan_parameters",
+    "minimize_exotic_matter",
 ]

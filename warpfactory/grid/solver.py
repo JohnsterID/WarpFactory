@@ -33,8 +33,7 @@ class GridSolver:
         self.fd = FiniteDifference(order=order)
         self.order = order
 
-    def metric_derivative1(self, g: np.ndarray,
-                           scaling) -> np.ndarray:
+    def metric_derivative1(self, g: np.ndarray, scaling) -> np.ndarray:
         """d_k g_munu for all k; shape (4, 4, 4) + grid (k first)."""
         dg = np.zeros((4,) + g.shape)
         for k in range(4):
@@ -48,8 +47,7 @@ class GridSolver:
                         dg[k, nu, mu] = d
         return dg
 
-    def metric_derivative2(self, g: np.ndarray,
-                           scaling) -> np.ndarray:
+    def metric_derivative2(self, g: np.ndarray, scaling) -> np.ndarray:
         """d_k d_n g_munu for all k, n; shape (4, 4, 4, 4) + grid."""
         d2g = np.zeros((4, 4) + g.shape)
         for k in range(4):
@@ -61,11 +59,11 @@ class GridSolver:
                 for mu in range(4):
                     for nu in range(mu, 4):
                         if k == n:
-                            d = self.fd.derivative2_delta(
-                                g[mu, nu], scaling[k], axis=k)
+                            d = self.fd.derivative2_delta(g[mu, nu], scaling[k], axis=k)
                         else:
                             d = self.fd.mixed_derivative2_delta(
-                                g[mu, nu], scaling[k], scaling[n], k, n)
+                                g[mu, nu], scaling[k], scaling[n], k, n
+                            )
                         d2g[k, n, mu, nu] = d
                         if mu != nu:
                             d2g[k, n, nu, mu] = d
@@ -85,8 +83,7 @@ class GridSolver:
         symmetrized = dg + np.swapaxes(dg, 0, 2) - np.swapaxes(dg, 0, 1)
         return 0.5 * np.einsum("ad...,bdc...->abc...", g_inv, symmetrized)
 
-    def ricci_tensor(self, g: np.ndarray, g_inv: np.ndarray,
-                     scaling) -> np.ndarray:
+    def ricci_tensor(self, g: np.ndarray, g_inv: np.ndarray, scaling) -> np.ndarray:
         """Ricci tensor R_bc on the grid.
 
         R_bc = d_a Gamma^a_bc - d_c Gamma^a_ba
@@ -109,11 +106,15 @@ class GridSolver:
         dg_inv = -np.einsum("am...,dn...,emn...->ead...", g_inv, g_inv, dg)
 
         # dS[e, b, d, c] = d_e d_b g_dc + d_e d_c g_db - d_e d_d g_bc
-        dS = (d2g
-              + np.swapaxes(d2g, 1, 3)          # d_e d_c g_db
-              - np.swapaxes(d2g, 1, 2))         # d_e d_d g_bc
-        dgamma = 0.5 * (np.einsum("ead...,bdc...->eabc...", dg_inv, S)
-                        + np.einsum("ad...,ebdc...->eabc...", g_inv, dS))
+        dS = (
+            d2g
+            + np.swapaxes(d2g, 1, 3)  # d_e d_c g_db
+            - np.swapaxes(d2g, 1, 2)
+        )  # d_e d_d g_bc
+        dgamma = 0.5 * (
+            np.einsum("ead...,bdc...->eabc...", dg_inv, S)
+            + np.einsum("ad...,ebdc...->eabc...", g_inv, dS)
+        )
 
         ricci = (
             np.einsum("aabc...->bc...", dgamma)
@@ -124,8 +125,9 @@ class GridSolver:
         # Symmetrize away FD round-off asymmetry.
         return 0.5 * (ricci + np.swapaxes(ricci, 0, 1))
 
-    def solve(self, metric: SpacetimeTensor,
-              contravariant: bool = True) -> SpacetimeTensor:
+    def solve(
+        self, metric: SpacetimeTensor, contravariant: bool = True
+    ) -> SpacetimeTensor:
         """Stress-energy tensor of a grid metric (MATLAB getEnergyTensor).
 
         Parameters
@@ -142,7 +144,8 @@ class GridSolver:
         """
         if not verify_tensor(metric):
             raise ValueError(
-                "Metric failed verification; see verify_tensor(metric, quiet=False)")
+                "Metric failed verification; see verify_tensor(metric, quiet=False)"
+            )
         if metric.index.lower() != "covariant":
             metric = change_tensor_index(metric, "covariant")
 
@@ -158,11 +161,16 @@ class GridSolver:
 
         if contravariant:
             stress_energy = np.einsum(
-                "ab...,ai...,bj...->ij...", stress_energy, g_inv, g_inv)
+                "ab...,ai...,bj...->ij...", stress_energy, g_inv, g_inv
+            )
             index = "contravariant"
 
         return SpacetimeTensor(
-            tensor=stress_energy, type="stress-energy", index=index,
-            coords=metric.coords, scaling=metric.scaling,
+            tensor=stress_energy,
+            type="stress-energy",
+            index=index,
+            coords=metric.coords,
+            scaling=metric.scaling,
             name=metric.name,
-            params={"order": self.order})
+            params={"order": self.order},
+        )

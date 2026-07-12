@@ -15,10 +15,12 @@ from .evaluate import EvaluationResult, evaluate_ansatz
 _PENALTY = 1e50
 
 
-def scan_parameters(ansatz: Ansatz,
-                    param_grid: Dict[str, Sequence[float]],
-                    fixed_params: Optional[Dict[str, float]] = None,
-                    **evaluate_kwargs) -> List[EvaluationResult]:
+def scan_parameters(
+    ansatz: Ansatz,
+    param_grid: Dict[str, Sequence[float]],
+    fixed_params: Optional[Dict[str, float]] = None,
+    **evaluate_kwargs,
+) -> List[EvaluationResult]:
     """Evaluate an ansatz over the Cartesian product of a value grid.
 
     Parameters
@@ -46,12 +48,15 @@ def scan_parameters(ansatz: Ansatz,
 
 
 def minimize_exotic_matter(
-        ansatz: Ansatz, initial_params: Dict[str, float],
-        fixed_params: Optional[Dict[str, float]] = None,
-        method: str = "Nelder-Mead", max_iterations: int = 50,
-        objective: Optional[Callable[[EvaluationResult], float]] = None,
-        callback: Optional[Callable[[Dict[str, float], float], None]] = None,
-        **evaluate_kwargs) -> OptimizeResult:
+    ansatz: Ansatz,
+    initial_params: Dict[str, float],
+    fixed_params: Optional[Dict[str, float]] = None,
+    method: str = "Nelder-Mead",
+    max_iterations: int = 50,
+    objective: Optional[Callable[[EvaluationResult], float]] = None,
+    callback: Optional[Callable[[Dict[str, float], float], None]] = None,
+    **evaluate_kwargs,
+) -> OptimizeResult:
     """Minimize integrated exotic matter over ansatz parameters.
 
     Uses derivative-free scipy minimizers since the objective is a
@@ -88,8 +93,9 @@ def minimize_exotic_matter(
         best_params
     """
     if method not in ("Nelder-Mead", "Powell"):
-        raise ValueError("method must be a derivative-free minimizer: "
-                         "'Nelder-Mead' or 'Powell'")
+        raise ValueError(
+            "method must be a derivative-free minimizer: 'Nelder-Mead' or 'Powell'"
+        )
     fixed_params = fixed_params or {}
     names = list(initial_params)
     x0 = np.array([initial_params[k] for k in names], dtype=float)
@@ -108,7 +114,8 @@ def minimize_exotic_matter(
             callback(params, value)
         return value
 
-    opt = minimize(scipy_objective, x0, method=method,
-                   options={"maxiter": max_iterations})
+    opt = minimize(
+        scipy_objective, x0, method=method, options={"maxiter": max_iterations}
+    )
     opt.best_params = {**fixed_params, **dict(zip(names, opt.x))}
     return opt

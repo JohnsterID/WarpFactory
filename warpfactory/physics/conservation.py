@@ -1,7 +1,8 @@
 """Stress-energy conservation analysis."""
 
-import numpy as np
 from typing import Dict
+
+import numpy as np
 
 from ..solver import (
     ChristoffelSymbols,
@@ -30,10 +31,14 @@ class StressEnergyConservation:
         self.energy = EnergyTensor(order=order)
         self.fd = FiniteDifference(order=order)
 
-    def calculate_divergence(self, metric: Dict[str, np.ndarray],
-                             gamma: Dict[str, np.ndarray],
-                             x: np.ndarray, y: np.ndarray,
-                             z: np.ndarray) -> Dict[str, np.ndarray]:
+    def calculate_divergence(
+        self,
+        metric: Dict[str, np.ndarray],
+        gamma: Dict[str, np.ndarray],
+        x: np.ndarray,
+        y: np.ndarray,
+        z: np.ndarray,
+    ) -> Dict[str, np.ndarray]:
         """Covariant divergence components of T^{mu nu}.
 
         Parameters
@@ -53,8 +58,7 @@ class StressEnergyConservation:
         """
         x = np.asarray(x, dtype=float)
 
-        T_cov = components_to_tensor(
-            self.energy.calculate_from_metric(metric, x), "T")
+        T_cov = components_to_tensor(self.energy.calculate_from_metric(metric, x), "T")
         g_inv = inverse_tensor(components_to_tensor(metric, "g"))
         T_con = np.einsum("ma...,nb...,ab...->mn...", g_inv, g_inv, T_cov)
 
@@ -71,11 +75,15 @@ class StressEnergyConservation:
             divergence[COORD_NAMES[nu]] = div_nu
         return divergence
 
-    def check_conservation_laws(self, metric: Dict[str, np.ndarray],
-                                gamma: Dict[str, np.ndarray],
-                                x: np.ndarray, y: np.ndarray,
-                                z: np.ndarray,
-                                atol: float = 1e-3) -> Dict[str, bool]:
+    def check_conservation_laws(
+        self,
+        metric: Dict[str, np.ndarray],
+        gamma: Dict[str, np.ndarray],
+        x: np.ndarray,
+        y: np.ndarray,
+        z: np.ndarray,
+        atol: float = 1e-3,
+    ) -> Dict[str, bool]:
         """Check energy and momentum conservation on interior points.
 
         Parameters
@@ -99,5 +107,5 @@ class StressEnergyConservation:
         interior = slice(4, -4)
         return {
             "energy": bool(np.allclose(div["t"][interior], 0.0, atol=atol)),
-            "momentum": bool(np.allclose(div["x"][interior], 0.0, atol=atol))
+            "momentum": bool(np.allclose(div["x"][interior], 0.0, atol=atol)),
         }

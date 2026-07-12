@@ -25,8 +25,7 @@ from .tensor import SpacetimeTensor, change_tensor_index, verify_tensor
 from .three_plus_one import three_plus_one_decomposer
 
 
-def eulerian_velocity(metric: SpacetimeTensor
-                      ) -> Tuple[np.ndarray, np.ndarray]:
+def eulerian_velocity(metric: SpacetimeTensor) -> Tuple[np.ndarray, np.ndarray]:
     """Eulerian observer 4-velocity, contravariant and covariant.
 
     Returns
@@ -39,16 +38,17 @@ def eulerian_velocity(metric: SpacetimeTensor
     grid_shape = metric.grid_shape
 
     u_up = np.empty((4,) + grid_shape)
-    u_up[0] = 1.0/alpha
-    u_up[1:] = -beta_up/alpha
+    u_up[0] = 1.0 / alpha
+    u_up[1:] = -beta_up / alpha
 
     g = change_tensor_index(metric, "covariant").tensor
     u_down = np.einsum("mn...,n...->m...", g, u_up)
     return u_up, u_down
 
 
-def get_scalars(metric: SpacetimeTensor, order: int = 4
-                ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def get_scalars(
+    metric: SpacetimeTensor, order: int = 4
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Expansion, shear, and vorticity scalars (MATLAB getScalars).
 
     Parameters
@@ -68,8 +68,9 @@ def get_scalars(metric: SpacetimeTensor, order: int = 4
         omega^2 = omega_ij omega^ij / 2
     """
     if not verify_tensor(metric):
-        raise ValueError("Metric failed verification; see "
-                         "verify_tensor(metric, quiet=False)")
+        raise ValueError(
+            "Metric failed verification; see verify_tensor(metric, quiet=False)"
+        )
     metric = change_tensor_index(metric, "covariant")
     g = np.asarray(metric.tensor, dtype=float)
     g_inv = inverse_tensor(g)
@@ -81,31 +82,35 @@ def get_scalars(metric: SpacetimeTensor, order: int = 4
     u_up, u_down = eulerian_velocity(metric)
 
     # nabla_a u_b = d_a u_b - Gamma^e_ba u_e
-    du = np.stack([solver.fd.derivative1_delta(u_down[b], metric.scaling[a],
-                                               axis=a)
-                   if g.shape[2 + a] >= 2 else np.zeros(metric.grid_shape)
-                   for a in range(4) for b in range(4)])
+    du = np.stack(
+        [
+            solver.fd.derivative1_delta(u_down[b], metric.scaling[a], axis=a)
+            if g.shape[2 + a] >= 2
+            else np.zeros(metric.grid_shape)
+            for a in range(4)
+            for b in range(4)
+        ]
+    )
     du = du.reshape((4, 4) + metric.grid_shape)
     nabla_u = du - np.einsum("eba...,e...->ab...", gamma, u_down)
 
     # Projector P^a_b = delta^a_b + u^a u_b and P_ab = g_ab + u_a u_b.
-    delta = np.eye(4).reshape((4, 4) + (1,)*len(metric.grid_shape))
+    delta = np.eye(4).reshape((4, 4) + (1,) * len(metric.grid_shape))
     P_mix = delta + np.einsum("a...,b...->ab...", u_up, u_down)
     P_down = g + np.einsum("a...,b...->ab...", u_down, u_down)
 
-    sym = 0.5*(nabla_u + np.swapaxes(nabla_u, 0, 1))
-    antisym = 0.5*(nabla_u - np.swapaxes(nabla_u, 0, 1))
+    sym = 0.5 * (nabla_u + np.swapaxes(nabla_u, 0, 1))
+    antisym = 0.5 * (nabla_u - np.swapaxes(nabla_u, 0, 1))
     theta = np.einsum("ai...,bj...,ab...->ij...", P_mix, P_mix, sym)
     omega = np.einsum("ai...,bj...,ab...->ij...", P_mix, P_mix, antisym)
 
     expansion = np.einsum("ij...,ij...->...", g_inv, theta)
 
-    shear_tensor = theta - expansion/3.0*P_down
-    shear_up = np.einsum("ia...,jb...,ab...->ij...", g_inv, g_inv,
-                         shear_tensor)
-    shear = 0.5*np.einsum("ij...,ij...->...", shear_tensor, shear_up)
+    shear_tensor = theta - expansion / 3.0 * P_down
+    shear_up = np.einsum("ia...,jb...,ab...->ij...", g_inv, g_inv, shear_tensor)
+    shear = 0.5 * np.einsum("ij...,ij...->...", shear_tensor, shear_up)
 
     omega_up = np.einsum("ia...,jb...,ab...->ij...", g_inv, g_inv, omega)
-    vorticity = 0.5*np.einsum("ij...,ij...->...", omega, omega_up)
+    vorticity = 0.5 * np.einsum("ij...,ij...->...", omega, omega_up)
 
     return expansion, shear, vorticity

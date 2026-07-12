@@ -1,7 +1,8 @@
 """Momentum flow analysis for warp drive metrics."""
 
-import numpy as np
 from typing import Dict
+
+import numpy as np
 
 from ..solver import (
     ChristoffelSymbols,
@@ -20,8 +21,14 @@ class MomentumFlow:
         self.energy = EnergyTensor(order=order)
         self.fd = FiniteDifference(order=order)
 
-    def calculate_flow_lines(self, metric: Dict[str, np.ndarray], x: np.ndarray,
-                             y: np.ndarray, z: np.ndarray, t: float) -> Dict[str, np.ndarray]:
+    def calculate_flow_lines(
+        self,
+        metric: Dict[str, np.ndarray],
+        x: np.ndarray,
+        y: np.ndarray,
+        z: np.ndarray,
+        t: float,
+    ) -> Dict[str, np.ndarray]:
         """Calculate Eulerian momentum flow lines.
 
         Parameters
@@ -55,8 +62,9 @@ class MomentumFlow:
             "x": x,
         }
 
-    def check_conservation(self, flow_lines: Dict[str, np.ndarray],
-                           metric: Dict[str, np.ndarray]) -> np.ndarray:
+    def check_conservation(
+        self, flow_lines: Dict[str, np.ndarray], metric: Dict[str, np.ndarray]
+    ) -> np.ndarray:
         """Covariant divergence of the EFE-derived stress-energy tensor.
 
         nabla_mu T^{mu nu} = d_mu T^{mu nu} + Gamma^mu_{mu a} T^{a nu}
@@ -73,8 +81,7 @@ class MomentumFlow:
         """
         x = flow_lines["x"]
 
-        T_cov = components_to_tensor(
-            self.energy.calculate_from_metric(metric, x), "T")
+        T_cov = components_to_tensor(self.energy.calculate_from_metric(metric, x), "T")
         g_inv = inverse_tensor(components_to_tensor(metric, "g"))
         T_con = np.einsum("ma...,nb...,ab...->mn...", g_inv, g_inv, T_cov)
 

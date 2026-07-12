@@ -12,11 +12,14 @@ def alcubierre_shape(r: np.ndarray, R: float, sigma: float) -> np.ndarray:
 
     f(r) = [tanh(sigma(R + r)) + tanh(sigma(R - r))] / [2 tanh(sigma R)]
     """
-    return (np.tanh(sigma*(R + r)) + np.tanh(sigma*(R - r))) / (2*np.tanh(sigma*R))
+    return (np.tanh(sigma * (R + r)) + np.tanh(sigma * (R - r))) / (
+        2 * np.tanh(sigma * R)
+    )
 
 
-def compact_sigmoid(r: np.ndarray, R1: float, R2: float, sigma: float,
-                    Rbuff: float = 0.0) -> np.ndarray:
+def compact_sigmoid(
+    r: np.ndarray, R1: float, R2: float, sigma: float, Rbuff: float = 0.0
+) -> np.ndarray:
     """Compactly supported sigmoid falling from 1 at R1+Rbuff to 0 at R2-Rbuff.
 
     Port of compactSigmoid.m: exactly 1 for r <= R1+Rbuff, exactly 0 for
@@ -33,9 +36,14 @@ def compact_sigmoid(r: np.ndarray, R1: float, R2: float, sigma: float,
     # exponent -> +inf at the inner edge and -inf at the outer edge;
     # clamp to avoid exp overflow (result saturates at 0/1 anyway)
     exponent = np.clip(
-        (R2 - R1 - 2*Rbuff)*(sigma + 2)/2
-        * (1.0/(r_in - outer) + 1.0/(r_in - inner)), -700, 700)
-    f[interior] = 1.0 - 1.0/(np.exp(exponent) + 1.0)
+        (R2 - R1 - 2 * Rbuff)
+        * (sigma + 2)
+        / 2
+        * (1.0 / (r_in - outer) + 1.0 / (r_in - inner)),
+        -700,
+        700,
+    )
+    f[interior] = 1.0 - 1.0 / (np.exp(exponent) + 1.0)
 
     if np.any(~np.isfinite(f)):
         raise ValueError("compact_sigmoid produced non-finite values")

@@ -1,7 +1,8 @@
 """Tidal force calculations via geodesic deviation."""
 
-import numpy as np
 from typing import Dict
+
+import numpy as np
 
 from ..solver import RiemannTensor, components_to_tensor
 
@@ -22,10 +23,14 @@ class TidalForces:
     def __init__(self, order: int = 4):
         self.riemann = RiemannTensor(order=order)
 
-    def calculate(self, metric: Dict[str, np.ndarray],
-                  gamma: Dict[str, np.ndarray],
-                  x: np.ndarray, y: np.ndarray,
-                  z: np.ndarray) -> Dict[str, np.ndarray]:
+    def calculate(
+        self,
+        metric: Dict[str, np.ndarray],
+        gamma: Dict[str, np.ndarray],
+        x: np.ndarray,
+        y: np.ndarray,
+        z: np.ndarray,
+    ) -> Dict[str, np.ndarray]:
         """Calculate tidal accelerations along the x axis slice.
 
         Parameters
@@ -58,5 +63,5 @@ class TidalForces:
         return {
             "radial": radial,
             "transverse": 0.5 * (transverse_y + transverse_z),
-            "longitudinal": radial
+            "longitudinal": radial,
         }

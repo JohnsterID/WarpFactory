@@ -1,7 +1,8 @@
 """Gravitational lensing calculations."""
 
-import numpy as np
 from typing import Dict, List
+
+import numpy as np
 from scipy.integrate import solve_ivp
 
 from .interpolation import MetricLine
@@ -17,8 +18,9 @@ class GravitationalLensing:
     normalized to the local light cone.
     """
 
-    def _null_velocity(self, line: MetricLine, position: np.ndarray,
-                       direction: np.ndarray) -> np.ndarray:
+    def _null_velocity(
+        self, line: MetricLine, position: np.ndarray, direction: np.ndarray
+    ) -> np.ndarray:
         """Scale a spatial direction onto the future light cone.
 
         Solves g_tt + 2 g_ti (s n^i) + g_ij (s n^i)(s n^j) = 0 for the
@@ -31,15 +33,20 @@ class GravitationalLensing:
         c = g[0, 0]
         disc = b * b - 4 * a * c
         if disc < 0:
-            raise ValueError("No null direction along the requested spatial "
-                             f"direction at x={position[0]:.3f}")
+            raise ValueError(
+                "No null direction along the requested spatial "
+                f"direction at x={position[0]:.3f}"
+            )
         s = (-b + np.sqrt(disc)) / (2 * a)
         return s * n
 
-    def _setup_ray_bundle(self, source_pos: np.ndarray,
-                          observer_pos: np.ndarray,
-                          bundle_radius: float,
-                          n_rays: int) -> List[Dict]:
+    def _setup_ray_bundle(
+        self,
+        source_pos: np.ndarray,
+        observer_pos: np.ndarray,
+        bundle_radius: float,
+        n_rays: int,
+    ) -> List[Dict]:
         """Initial conditions for a circular bundle of rays."""
         direction = observer_pos - source_pos
         direction = direction / np.linalg.norm(direction)
@@ -57,16 +64,17 @@ class GravitationalLensing:
             theta = 2 * np.pi * i / n_rays
             offset = bundle_radius * (right * np.cos(theta) + up * np.sin(theta))
             pos = source_pos + offset
-            rays.append({
-                "position": pos.copy(),
-                "direction": direction.copy(),
-                "path": [pos.copy()],
-                "time_delay": 0.0
-            })
+            rays.append(
+                {
+                    "position": pos.copy(),
+                    "direction": direction.copy(),
+                    "path": [pos.copy()],
+                    "time_delay": 0.0,
+                }
+            )
         return rays
 
-    def _propagate_ray(self, line: MetricLine, ray: Dict,
-                       dt: float = 0.1) -> None:
+    def _propagate_ray(self, line: MetricLine, ray: Dict, dt: float = 0.1) -> None:
         """Advance a ray by coordinate time dt along its null geodesic."""
         velocity = self._null_velocity(line, ray["position"], ray["direction"])
 
@@ -88,11 +96,14 @@ class GravitationalLensing:
         ray["path"].append(ray["position"].copy())
         ray["time_delay"] += dt
 
-    def trace_light_rays(self, metric: Dict[str, np.ndarray],
-                         source_pos: np.ndarray,
-                         observer_pos: np.ndarray,
-                         bundle_radius: float,
-                         n_rays: int) -> List[Dict]:
+    def trace_light_rays(
+        self,
+        metric: Dict[str, np.ndarray],
+        source_pos: np.ndarray,
+        observer_pos: np.ndarray,
+        bundle_radius: float,
+        n_rays: int,
+    ) -> List[Dict]:
         """Trace a bundle of light rays from source toward observer.
 
         Parameters
@@ -113,8 +124,7 @@ class GravitationalLensing:
             plus magnification/shear/convergence once arrived
         """
         line = MetricLine(metric)
-        rays = self._setup_ray_bundle(source_pos, observer_pos,
-                                      bundle_radius, n_rays)
+        rays = self._setup_ray_bundle(source_pos, observer_pos, bundle_radius, n_rays)
         initial_area = bundle_radius**2
 
         # A ray has arrived once it crosses the observer plane (the plane
@@ -142,8 +152,11 @@ class GravitationalLensing:
         # Convergence/shear from the anisotropy of the final bundle shape
         spreads = np.sqrt(np.sum(offsets**2, axis=1))
         mean_spread = np.mean(spreads)
-        anisotropy = (np.max(spreads) - np.min(spreads)) / (2 * mean_spread) \
-            if mean_spread > 0 else 0.0
+        anisotropy = (
+            (np.max(spreads) - np.min(spreads)) / (2 * mean_spread)
+            if mean_spread > 0
+            else 0.0
+        )
         convergence = 1.0 - mean_spread / bundle_radius
 
         for ray in rays:
@@ -155,7 +168,9 @@ class GravitationalLensing:
     def analyze_bundle(self, rays: List[Dict]) -> Dict[str, float]:
         """Aggregate optical properties of a traced ray bundle."""
         return {
-            "magnification": float(np.mean([r.get("magnification", 1.0) for r in rays])),
+            "magnification": float(
+                np.mean([r.get("magnification", 1.0) for r in rays])
+            ),
             "shear": float(np.mean([r.get("shear", 0.0) for r in rays])),
             "convergence": float(np.mean([r.get("convergence", 0.0) for r in rays])),
         }

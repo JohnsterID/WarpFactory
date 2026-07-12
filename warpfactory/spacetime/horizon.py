@@ -1,7 +1,8 @@
 """Event horizon finder."""
 
-import numpy as np
 from typing import Dict
+
+import numpy as np
 
 from .interpolation import MetricLine
 
@@ -39,15 +40,13 @@ class HorizonFinder:
         """Closed circular ring of radius |x_root| in the xz-plane."""
         theta = np.linspace(0.0, 2 * np.pi, self.N_RING + 1)
         radius = abs(x_root)
-        return np.column_stack([
-            radius * np.cos(theta),
-            np.zeros_like(theta),
-            radius * np.sin(theta)
-        ])
+        return np.column_stack(
+            [radius * np.cos(theta), np.zeros_like(theta), radius * np.sin(theta)]
+        )
 
-    def find_horizons(self, metric: Dict[str, np.ndarray],
-                      x: np.ndarray, y: np.ndarray,
-                      z: np.ndarray) -> Dict[str, np.ndarray]:
+    def find_horizons(
+        self, metric: Dict[str, np.ndarray], x: np.ndarray, y: np.ndarray, z: np.ndarray
+    ) -> Dict[str, np.ndarray]:
         """Find horizon surfaces.
 
         Parameters
@@ -84,8 +83,9 @@ class HorizonFinder:
                 horizons["inner"] = self._ring(np.min(np.abs(det_roots)))
         return horizons
 
-    def analyze_horizons(self, metric: Dict[str, np.ndarray],
-                         horizons: Dict[str, np.ndarray]) -> Dict[str, float]:
+    def analyze_horizons(
+        self, metric: Dict[str, np.ndarray], horizons: Dict[str, np.ndarray]
+    ) -> Dict[str, float]:
         """Analyze properties of the found horizons.
 
         Returns
@@ -96,11 +96,13 @@ class HorizonFinder:
             regular part)) evaluated at the outer root, and
             "angular_velocity" omega = -g_tx / g_tt there
         """
-        properties = {"area": 0.0, "surface_gravity": 0.0,
-                      "angular_velocity": 0.0}
+        properties = {"area": 0.0, "surface_gravity": 0.0, "angular_velocity": 0.0}
         outer = horizons.get("outer")
-        reference = outer if outer is not None and len(outer) > 0 \
+        reference = (
+            outer
+            if outer is not None and len(outer) > 0
             else horizons.get("ergosphere")
+        )
         if reference is None or len(reference) == 0:
             return properties
 
@@ -115,7 +117,8 @@ class HorizonFinder:
         dgtt_dx = (g_p[0, 0] - g_m[0, 0]) / (2 * dx)
         g_xx_val = g_0[1, 1]
         properties["surface_gravity"] = float(
-            abs(dgtt_dx) / (2 * np.sqrt(abs(g_xx_val))))
+            abs(dgtt_dx) / (2 * np.sqrt(abs(g_xx_val)))
+        )
 
         if abs(g_0[0, 0]) > 1e-12:
             properties["angular_velocity"] = float(-g_0[0, 1] / g_0[0, 0])

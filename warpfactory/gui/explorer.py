@@ -2,29 +2,37 @@
 
 import numpy as np
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QComboBox, QLabel
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QVBoxLayout,
+    QWidget,
 )
 
 from ..metrics import (
     AlcubierreMetric,
     LentzMetric,
+    MinkowskiMetric,
     VanDenBroeckMetric,
     WarpShellMetric,
-    MinkowskiMetric,
 )
 from ..solver import EnergyTensor
-from .plotter import MetricPlotter
-from .parameters import ParameterPanel
 from .energy import EnergyConditionViewer
+from .parameters import ParameterPanel
+from .plotter import MetricPlotter
 
 METRIC_CATALOG = {
     "Alcubierre": (AlcubierreMetric, {"v_s": 2.0, "R": 1.0, "sigma": 0.5}),
     "Lentz": (LentzMetric, {"v_s": 2.0, "R": 1.0, "sigma": 0.5}),
-    "Van Den Broeck": (VanDenBroeckMetric,
-                       {"v_s": 2.0, "R": 1.0, "B": 2.0, "sigma": 0.5}),
-    "Warp Shell": (WarpShellMetric,
-                   {"v_s": 2.0, "R": 1.0, "thickness": 0.2, "sigma": 0.5}),
+    "Van Den Broeck": (
+        VanDenBroeckMetric,
+        {"v_s": 2.0, "R": 1.0, "B": 2.0, "sigma": 0.5},
+    ),
+    "Warp Shell": (
+        WarpShellMetric,
+        {"v_s": 2.0, "R": 1.0, "thickness": 0.2, "sigma": 0.5},
+    ),
     "Minkowski": (MinkowskiMetric, {}),
 }
 

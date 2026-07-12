@@ -7,8 +7,9 @@ Einstein field equations, T_munu = G_munu / (8 pi) in geometric units
 (G = c = 1).
 """
 
-import numpy as np
 from typing import Dict
+
+import numpy as np
 
 from .ricci import RicciTensor
 from .tensor_utils import COORDS, components_to_tensor, inverse_tensor
@@ -20,8 +21,9 @@ class EnergyTensor:
     def __init__(self, order: int = 4):
         self.ricci = RicciTensor(order=order)
 
-    def calculate_from_metric(self, metric: Dict[str, np.ndarray],
-                              x: np.ndarray) -> Dict[str, np.ndarray]:
+    def calculate_from_metric(
+        self, metric: Dict[str, np.ndarray], x: np.ndarray
+    ) -> Dict[str, np.ndarray]:
         """Stress-energy tensor T_munu of a metric via the field equations.
 
         Parameters
@@ -55,8 +57,9 @@ class EnergyTensor:
                 components[f"T_{COORDS[mu]}{COORDS[nu]}"] = stress_energy[mu, nu]
         return components
 
-    def calculate_perfect_fluid(self, rho: np.ndarray, p: np.ndarray,
-                                x: np.ndarray) -> Dict[str, np.ndarray]:
+    def calculate_perfect_fluid(
+        self, rho: np.ndarray, p: np.ndarray, x: np.ndarray
+    ) -> Dict[str, np.ndarray]:
         """Perfect fluid stress-energy tensor: T_tt = rho, T_ii = p."""
         return {
             "T_tt": rho,
@@ -65,5 +68,5 @@ class EnergyTensor:
             "T_zz": p,
             "T_tx": np.zeros_like(x),
             "T_ty": np.zeros_like(x),
-            "T_tz": np.zeros_like(x)
+            "T_tz": np.zeros_like(x),
         }

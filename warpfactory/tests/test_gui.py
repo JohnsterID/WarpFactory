@@ -1,17 +1,19 @@
 """Test GUI components."""
 
-import pytest
 import numpy as np
+import pytest
 
-pytest.importorskip("PyQt6.QtWidgets",
-                    reason="Qt6 is not available. Install PyQt6 to run GUI tests.")
+pytest.importorskip(
+    "PyQt6.QtWidgets", reason="Qt6 is not available. Install PyQt6 to run GUI tests."
+)
 
 from warpfactory.gui import (
+    EnergyConditionViewer,
     MetricExplorer,
     MetricPlotter,
     ParameterPanel,
-    EnergyConditionViewer,
 )
+
 
 @pytest.mark.gui
 def test_metric_explorer(app, metric_params, spatial_grid):
@@ -39,6 +41,7 @@ def test_metric_explorer(app, metric_params, spatial_grid):
     metric_combo.setCurrentText("Minkowski")
     assert param_panel.parameters == {}
 
+
 @pytest.mark.gui
 def test_metric_explorer_pipeline(app):
     """Parameter changes must propagate to the plot data."""
@@ -55,6 +58,7 @@ def test_metric_explorer_pipeline(app):
     # Energy viewer must hold the derived stress-energy tensor
     assert explorer.energy_viewer.tensor is not None
     assert "T_tt" in explorer.energy_viewer.tensor
+
 
 @pytest.mark.gui
 def test_metric_plotter(app, test_metric_components):
@@ -76,6 +80,7 @@ def test_metric_plotter(app, test_metric_components):
     assert isinstance(plot_data, np.ndarray)
     assert plot_data.shape == components["g_tx"].shape
 
+
 @pytest.mark.gui
 def test_parameter_panel(app, metric_params):
     """Test the parameter input panel."""
@@ -94,6 +99,7 @@ def test_parameter_panel(app, metric_params):
         panel.set_value("v_s", -1.0)
     with pytest.raises(ValueError):
         panel.set_value("R", 0.0)
+
 
 @pytest.mark.gui
 def test_energy_condition_viewer(app, test_energy_tensor):

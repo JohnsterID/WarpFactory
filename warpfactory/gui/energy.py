@@ -1,12 +1,9 @@
 """Energy condition visualization widget."""
 
 import numpy as np
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QComboBox,
-    QLabel, QCheckBox
-)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+from PyQt6.QtWidgets import QCheckBox, QComboBox, QLabel, QVBoxLayout, QWidget
 
 from ..analyzer import EnergyConditions
 
@@ -62,7 +59,7 @@ class EnergyConditionViewer(QWidget):
             "weak": self.energy_conditions.check_weak(self.tensor),
             "null": self.energy_conditions.check_null(self.tensor),
             "strong": self.energy_conditions.check_strong(self.tensor),
-            "dominant": self.energy_conditions.check_dominant(self.tensor)
+            "dominant": self.energy_conditions.check_dominant(self.tensor),
         }
 
     def set_mode(self, mode: str):
@@ -91,16 +88,23 @@ class EnergyConditionViewer(QWidget):
             title = "Pressure (x)"
         else:
             conditions = self.check_conditions()
-            violation_count = sum(1 for satisfied in conditions.values() if not satisfied)
-            values = np.full_like(np.asarray(self.tensor["T_tt"]),
-                                  float(violation_count))
+            violation_count = sum(
+                1 for satisfied in conditions.values() if not satisfied
+            )
+            values = np.full_like(
+                np.asarray(self.tensor["T_tt"]), float(violation_count)
+            )
             title = "Energy Condition Violations"
 
         if values.ndim >= 2:
             image = ax.imshow(values)
             self.figure.colorbar(image)
         else:
-            x = self.coordinates if self.coordinates is not None else np.arange(len(values))
+            x = (
+                self.coordinates
+                if self.coordinates is not None
+                else np.arange(len(values))
+            )
             ax.plot(x, values)
         ax.set_title(title)
 
@@ -109,8 +113,13 @@ class EnergyConditionViewer(QWidget):
             offset = 0.98
             for condition, satisfied in conditions.items():
                 if not satisfied:
-                    ax.text(0.02, offset, f"{condition} violated",
-                            transform=ax.transAxes, verticalalignment="top")
+                    ax.text(
+                        0.02,
+                        offset,
+                        f"{condition} violated",
+                        transform=ax.transAxes,
+                        verticalalignment="top",
+                    )
                     offset -= 0.06
 
         self.canvas.draw_idle()

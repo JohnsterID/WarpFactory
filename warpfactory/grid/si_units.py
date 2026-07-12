@@ -28,34 +28,45 @@ def stress_energy_to_si(stress_energy: SpacetimeTensor) -> SpacetimeTensor:
     (including time) is in meters in the geometric convention.
     """
     if stress_energy.type.lower() != "stress-energy":
-        raise ValueError("stress_energy_to_si expects a stress-energy "
-                         f"tensor, got type '{stress_energy.type}'")
+        raise ValueError(
+            "stress_energy_to_si expects a stress-energy "
+            f"tensor, got type '{stress_energy.type}'"
+        )
     if stress_energy.params.get("units") == "si":
         return stress_energy
     params = dict(stress_energy.params)
     params["units"] = "si"
     return SpacetimeTensor(
         tensor=np.asarray(stress_energy.tensor) * si_energy_factor(),
-        type=stress_energy.type, index=stress_energy.index,
-        coords=stress_energy.coords, scaling=stress_energy.scaling,
-        name=stress_energy.name, params=params,
-        frame=stress_energy.frame)
+        type=stress_energy.type,
+        index=stress_energy.index,
+        coords=stress_energy.coords,
+        scaling=stress_energy.scaling,
+        name=stress_energy.name,
+        params=params,
+        frame=stress_energy.frame,
+    )
 
 
-def stress_energy_to_geometric(stress_energy: SpacetimeTensor
-                               ) -> SpacetimeTensor:
+def stress_energy_to_geometric(stress_energy: SpacetimeTensor) -> SpacetimeTensor:
     """Convert an SI stress-energy tensor back to geometric units."""
     if stress_energy.type.lower() != "stress-energy":
-        raise ValueError("stress_energy_to_geometric expects a "
-                         "stress-energy tensor, got type "
-                         f"'{stress_energy.type}'")
+        raise ValueError(
+            "stress_energy_to_geometric expects a "
+            "stress-energy tensor, got type "
+            f"'{stress_energy.type}'"
+        )
     if stress_energy.params.get("units") != "si":
         return stress_energy
     params = dict(stress_energy.params)
     params.pop("units")
     return SpacetimeTensor(
         tensor=np.asarray(stress_energy.tensor) / si_energy_factor(),
-        type=stress_energy.type, index=stress_energy.index,
-        coords=stress_energy.coords, scaling=stress_energy.scaling,
-        name=stress_energy.name, params=params,
-        frame=stress_energy.frame)
+        type=stress_energy.type,
+        index=stress_energy.index,
+        coords=stress_energy.coords,
+        scaling=stress_energy.scaling,
+        name=stress_energy.name,
+        params=params,
+        frame=stress_energy.frame,
+    )

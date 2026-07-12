@@ -6,8 +6,9 @@ stress-energy dictionaries use "T_tt", "T_tx". The coordinate order is
 fixed as (t, x, y, z) and defined only here.
 """
 
-import numpy as np
 from typing import Dict, Tuple
+
+import numpy as np
 
 COORDS: Tuple[str, ...] = ("t", "x", "y", "z")
 
@@ -17,8 +18,9 @@ def component_key(prefix: str, mu: int, nu: int) -> str:
     return f"{prefix}_{a}{b}"
 
 
-def components_to_tensor(components: Dict[str, np.ndarray],
-                         prefix: str = "g") -> np.ndarray:
+def components_to_tensor(
+    components: Dict[str, np.ndarray], prefix: str = "g"
+) -> np.ndarray:
     """Build a symmetric rank-2 tensor array from a component dict.
 
     Missing off-diagonal components default to zero. Missing diagonal
@@ -50,8 +52,9 @@ def components_to_tensor(components: Dict[str, np.ndarray],
     return tensor
 
 
-def tensor_to_components(tensor: np.ndarray,
-                         prefix: str = "g") -> Dict[str, np.ndarray]:
+def tensor_to_components(
+    tensor: np.ndarray, prefix: str = "g"
+) -> Dict[str, np.ndarray]:
     """Flatten the upper triangle of a symmetric rank-2 tensor to a dict."""
     components = {}
     for mu in range(4):

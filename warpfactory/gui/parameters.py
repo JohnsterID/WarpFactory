@@ -1,10 +1,7 @@
 """Parameter input panel for metric configuration."""
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QDoubleSpinBox
-)
 from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtWidgets import QDoubleSpinBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 
 class ParameterPanel(QWidget):
@@ -47,9 +44,7 @@ class ParameterPanel(QWidget):
             spinbox.setRange(0.0, 10.0)
             spinbox.setSingleStep(0.1)
             spinbox.setValue(value)
-            spinbox.valueChanged.connect(
-                lambda v, n=name: self._on_value_changed(n, v)
-            )
+            spinbox.valueChanged.connect(lambda v, n=name: self._on_value_changed(n, v))
             self.spinboxes[name] = spinbox
             row.addWidget(spinbox)
 

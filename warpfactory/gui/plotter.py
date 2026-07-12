@@ -1,9 +1,9 @@
 """Interactive metric visualization widget."""
 
 import numpy as np
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QComboBox, QLabel
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+from PyQt6.QtWidgets import QComboBox, QLabel, QVBoxLayout, QWidget
 
 from ..visualizer import ColorMaps
 
@@ -73,7 +73,11 @@ class MetricPlotter(QWidget):
             self.figure.colorbar(image)
         else:
             # 1-D slices cannot be imshow-n; draw a colormapped line plot
-            x = self.coordinates if self.coordinates is not None else np.arange(len(values))
+            x = (
+                self.coordinates
+                if self.coordinates is not None
+                else np.arange(len(values))
+            )
             ax.plot(x, values, color=cmap(0.8))
         ax.set_title(f"Metric Component {component}")
         self.canvas.draw_idle()

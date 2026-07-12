@@ -44,11 +44,13 @@ class FiniteDifference:
         df = np.empty_like(moved)
 
         if self.order == 4 and moved.shape[0] >= 5:
-            df[2:-2] = (moved[:-4] - 8*moved[1:-3] + 8*moved[3:-1] - moved[4:]) / (12*dx)
-            df[1] = (moved[2] - moved[0]) / (2*dx)
-            df[-2] = (moved[-1] - moved[-3]) / (2*dx)
+            df[2:-2] = (moved[:-4] - 8 * moved[1:-3] + 8 * moved[3:-1] - moved[4:]) / (
+                12 * dx
+            )
+            df[1] = (moved[2] - moved[0]) / (2 * dx)
+            df[-2] = (moved[-1] - moved[-3]) / (2 * dx)
         else:
-            df[1:-1] = (moved[2:] - moved[:-2]) / (2*dx)
+            df[1:-1] = (moved[2:] - moved[:-2]) / (2 * dx)
         df[0] = (moved[1] - moved[0]) / dx
         df[-1] = (moved[-1] - moved[-2]) / dx
         return np.moveaxis(df, 0, axis)
@@ -67,24 +69,33 @@ class FiniteDifference:
         d2f = np.empty_like(moved)
 
         if self.order == 4 and moved.shape[0] >= 5:
-            d2f[2:-2] = (-moved[:-4] + 16*moved[1:-3] - 30*moved[2:-2]
-                         + 16*moved[3:-1] - moved[4:]) / (12*dx**2)
-            d2f[1] = (moved[2] - 2*moved[1] + moved[0]) / dx**2
-            d2f[-2] = (moved[-1] - 2*moved[-2] + moved[-3]) / dx**2
+            d2f[2:-2] = (
+                -moved[:-4]
+                + 16 * moved[1:-3]
+                - 30 * moved[2:-2]
+                + 16 * moved[3:-1]
+                - moved[4:]
+            ) / (12 * dx**2)
+            d2f[1] = (moved[2] - 2 * moved[1] + moved[0]) / dx**2
+            d2f[-2] = (moved[-1] - 2 * moved[-2] + moved[-3]) / dx**2
         else:
-            d2f[1:-1] = (moved[2:] - 2*moved[1:-1] + moved[:-2]) / dx**2
-        d2f[0] = (moved[2] - 2*moved[1] + moved[0]) / dx**2
-        d2f[-1] = (moved[-1] - 2*moved[-2] + moved[-3]) / dx**2
+            d2f[1:-1] = (moved[2:] - 2 * moved[1:-1] + moved[:-2]) / dx**2
+        d2f[0] = (moved[2] - 2 * moved[1] + moved[0]) / dx**2
+        d2f[-1] = (moved[-1] - 2 * moved[-2] + moved[-3]) / dx**2
         return np.moveaxis(d2f, 0, axis)
 
-    def mixed_derivative2(self, f: np.ndarray, x1: np.ndarray, x2: np.ndarray,
-                          axis1: int, axis2: int) -> np.ndarray:
+    def mixed_derivative2(
+        self, f: np.ndarray, x1: np.ndarray, x2: np.ndarray, axis1: int, axis2: int
+    ) -> np.ndarray:
         """Mixed second derivative d2f/(dx1 dx2)."""
-        return self.mixed_derivative2_delta(f, _grid_spacing(x1), _grid_spacing(x2),
-                                            axis1, axis2)
+        return self.mixed_derivative2_delta(
+            f, _grid_spacing(x1), _grid_spacing(x2), axis1, axis2
+        )
 
-    def mixed_derivative2_delta(self, f: np.ndarray, dx1: float, dx2: float,
-                                axis1: int, axis2: int) -> np.ndarray:
+    def mixed_derivative2_delta(
+        self, f: np.ndarray, dx1: float, dx2: float, axis1: int, axis2: int
+    ) -> np.ndarray:
         """Mixed second derivative with explicit uniform grid spacings."""
         return self.derivative1_delta(
-            self.derivative1_delta(f, dx1, axis=axis1), dx2, axis=axis2)
+            self.derivative1_delta(f, dx1, axis=axis1), dx2, axis=axis2
+        )

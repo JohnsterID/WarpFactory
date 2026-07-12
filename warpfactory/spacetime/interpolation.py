@@ -10,15 +10,23 @@ positions, not just grid nodes. This helper interpolates the sampled
 with only x-derivatives nonzero (stationary axial slices).
 """
 
-import numpy as np
 from typing import Dict
+
+import numpy as np
 
 X_MIN, X_MAX = -5.0, 5.0
 
 _COMPONENT_INDEX = {
-    "g_tt": (0, 0), "g_tx": (0, 1), "g_ty": (0, 2), "g_tz": (0, 3),
-    "g_xx": (1, 1), "g_xy": (1, 2), "g_xz": (1, 3),
-    "g_yy": (2, 2), "g_yz": (2, 3), "g_zz": (3, 3),
+    "g_tt": (0, 0),
+    "g_tx": (0, 1),
+    "g_ty": (0, 2),
+    "g_tz": (0, 3),
+    "g_xx": (1, 1),
+    "g_xy": (1, 2),
+    "g_xz": (1, 3),
+    "g_yy": (2, 2),
+    "g_yz": (2, 3),
+    "g_zz": (3, 3),
 }
 
 
@@ -37,8 +45,11 @@ class MetricLine:
     def __init__(self, metric: Dict[str, np.ndarray], x: np.ndarray = None):
         self.metric = metric
         n = len(np.asarray(metric["g_tt"]))
-        self.x = np.asarray(x, dtype=float) if x is not None \
+        self.x = (
+            np.asarray(x, dtype=float)
+            if x is not None
             else np.linspace(X_MIN, X_MAX, n)
+        )
 
     def tensor_at(self, x_pos: float) -> np.ndarray:
         """4x4 covariant metric tensor at position x_pos."""
@@ -68,8 +79,9 @@ class MetricLine:
                     gamma[a, b, c] = 0.5 * total
         return gamma
 
-    def coordinate_acceleration(self, position: np.ndarray,
-                                velocity: np.ndarray) -> np.ndarray:
+    def coordinate_acceleration(
+        self, position: np.ndarray, velocity: np.ndarray
+    ) -> np.ndarray:
         """Geodesic acceleration in coordinate-time parametrization.
 
         For w^a = (1, v) the reduction of the geodesic equation to

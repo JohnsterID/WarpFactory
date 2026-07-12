@@ -1,7 +1,8 @@
 """Geodesic equation solver."""
 
-import numpy as np
 from typing import Dict, Tuple
+
+import numpy as np
 from scipy.integrate import solve_ivp
 
 from .interpolation import MetricLine
@@ -15,19 +16,21 @@ class GeodesicSolver:
     which is exact and avoids ad hoc renormalization during integration.
     """
 
-    def interpolate_metric(self, metric: Dict[str, np.ndarray],
-                           position: np.ndarray) -> np.ndarray:
+    def interpolate_metric(
+        self, metric: Dict[str, np.ndarray], position: np.ndarray
+    ) -> np.ndarray:
         """4x4 metric tensor interpolated at a position."""
         return MetricLine(metric).tensor_at(position[0])
 
-    def calculate_christoffel(self, metric: Dict[str, np.ndarray],
-                              position: np.ndarray) -> np.ndarray:
+    def calculate_christoffel(
+        self, metric: Dict[str, np.ndarray], position: np.ndarray
+    ) -> np.ndarray:
         """Christoffel symbols Gamma^a_bc at a position."""
         return MetricLine(metric).christoffel_at(position[0])
 
-    def four_velocity(self, metric: Dict[str, np.ndarray],
-                      position: np.ndarray,
-                      velocity: np.ndarray) -> np.ndarray:
+    def four_velocity(
+        self, metric: Dict[str, np.ndarray], position: np.ndarray, velocity: np.ndarray
+    ) -> np.ndarray:
         """Normalized timelike 4-velocity for coordinate velocity v.
 
         u^a = (dt/dtau) (1, v) with dt/dtau fixed by g_ab u^a u^b = -1.
@@ -43,12 +46,19 @@ class GeodesicSolver:
         if norm2 >= 0:
             raise ValueError(
                 f"Coordinate velocity {velocity} is not timelike at "
-                f"x={position[0]:.3f} (w.g.w = {norm2:.3e} >= 0)")
+                f"x={position[0]:.3f} (w.g.w = {norm2:.3e} >= 0)"
+            )
         return w / np.sqrt(-norm2)
 
-    def solve(self, metric: Dict[str, np.ndarray], t0: float,
-              x0: np.ndarray, v0: np.ndarray, t_max: float,
-              dt: float) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def solve(
+        self,
+        metric: Dict[str, np.ndarray],
+        t0: float,
+        x0: np.ndarray,
+        v0: np.ndarray,
+        t_max: float,
+        dt: float,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Integrate a timelike geodesic.
 
         Parameters
@@ -96,9 +106,9 @@ class GeodesicSolver:
 
         return sol.t, sol.y[:3].T, sol.y[3:].T
 
-    def calculate_energy(self, metric: Dict[str, np.ndarray],
-                         position: np.ndarray,
-                         velocity: np.ndarray) -> float:
+    def calculate_energy(
+        self, metric: Dict[str, np.ndarray], position: np.ndarray, velocity: np.ndarray
+    ) -> float:
         """Conserved energy E = -g_ab (dt)^a u^b = -(g_tt u^t + g_tx u^x + ...).
 
         Exactly conserved along geodesics of stationary metrics

@@ -17,8 +17,11 @@ from .three_plus_one import three_plus_one_decomposer
 _AXIS_LABELS = ("t", "x", "y", "z")
 
 
-def get_slice_data(tensor_field: np.ndarray, sliced_planes: Sequence[int],
-                   slice_locations: Sequence[int]) -> np.ndarray:
+def get_slice_data(
+    tensor_field: np.ndarray,
+    sliced_planes: Sequence[int],
+    slice_locations: Sequence[int],
+) -> np.ndarray:
     """Extract a 2-D slice from a 4-D grid component.
 
     Parameters
@@ -37,12 +40,13 @@ def get_slice_data(tensor_field: np.ndarray, sliced_planes: Sequence[int],
     """
     if sliced_planes[0] == sliced_planes[1]:
         raise ValueError("sliced planes must be two different axes")
-    index = [slice(None)]*4
+    index = [slice(None)] * 4
     for axis, location in zip(sliced_planes, slice_locations):
         if not 0 <= location < tensor_field.shape[axis]:
             raise ValueError(
                 f"slice location {location} outside axis {axis} "
-                f"of size {tensor_field.shape[axis]}")
+                f"of size {tensor_field.shape[axis]}"
+            )
         index[axis] = location
     return tensor_field[tuple(index)]
 
@@ -53,11 +57,10 @@ def _shown_axes(sliced_planes: Sequence[int]) -> Tuple[int, int]:
 
 
 def _default_slice(grid_shape, sliced_planes):
-    return [grid_shape[axis]//2 for axis in sliced_planes]
+    return [grid_shape[axis] // 2 for axis in sliced_planes]
 
 
-def _plot_slice(data2d: np.ndarray, title: str, xlabel: str,
-                ylabel: str) -> plt.Figure:
+def _plot_slice(data2d: np.ndarray, title: str, xlabel: str, ylabel: str) -> plt.Figure:
     fig, ax = plt.subplots()
     im = ax.pcolormesh(data2d.T, cmap=ColorMaps().redblue(), shading="auto")
     fig.colorbar(im, ax=ax)
@@ -67,9 +70,11 @@ def _plot_slice(data2d: np.ndarray, title: str, xlabel: str,
     return fig
 
 
-def plot_tensor(tensor: SpacetimeTensor,
-                sliced_planes: Sequence[int] = (0, 3),
-                slice_locations: Optional[Sequence[int]] = None) -> List[plt.Figure]:
+def plot_tensor(
+    tensor: SpacetimeTensor,
+    sliced_planes: Sequence[int] = (0, 3),
+    slice_locations: Optional[Sequence[int]] = None,
+) -> List[plt.Figure]:
     """Plot the unique components of a grid tensor on a 2-D slice.
 
     Port of plotTensor.m: covariant/contravariant tensors plot the 10
@@ -91,8 +96,7 @@ def plot_tensor(tensor: SpacetimeTensor,
     ax1, ax2 = _shown_axes(sliced_planes)
     figures = []
     for mu, nu in components:
-        data2d = get_slice_data(tensor.tensor[mu, nu], sliced_planes,
-                                slice_locations)
+        data2d = get_slice_data(tensor.tensor[mu, nu], sliced_planes, slice_locations)
         if index == "covariant":
             title = f"{symbol}_{{{_AXIS_LABELS[mu]}{_AXIS_LABELS[nu]}}}"
         elif index == "contravariant":
@@ -101,14 +105,15 @@ def plot_tensor(tensor: SpacetimeTensor,
             title = f"{symbol}^{{{_AXIS_LABELS[mu]}}}_{{{_AXIS_LABELS[nu]}}}"
         else:
             title = f"{symbol}_{{{_AXIS_LABELS[mu]}}}^{{{_AXIS_LABELS[nu]}}}"
-        figures.append(_plot_slice(data2d, title,
-                                   _AXIS_LABELS[ax1], _AXIS_LABELS[ax2]))
+        figures.append(_plot_slice(data2d, title, _AXIS_LABELS[ax1], _AXIS_LABELS[ax2]))
     return figures
 
 
-def plot_three_plus_one(metric: SpacetimeTensor,
-                        sliced_planes: Sequence[int] = (0, 3),
-                        slice_locations: Optional[Sequence[int]] = None) -> List[plt.Figure]:
+def plot_three_plus_one(
+    metric: SpacetimeTensor,
+    sliced_planes: Sequence[int] = (0, 3),
+    slice_locations: Optional[Sequence[int]] = None,
+) -> List[plt.Figure]:
     """Plot the ADM lapse, shift and spatial metric on a 2-D slice.
 
     Port of plotThreePlusOne.m: one figure for alpha, three for beta_i,
@@ -126,16 +131,31 @@ def plot_three_plus_one(metric: SpacetimeTensor,
     ax1, ax2 = _shown_axes(sliced_planes)
     xlabel, ylabel = _AXIS_LABELS[ax1], _AXIS_LABELS[ax2]
 
-    figures = [_plot_slice(
-        get_slice_data(alpha, sliced_planes, slice_locations),
-        r"$\alpha$", xlabel, ylabel)]
+    figures = [
+        _plot_slice(
+            get_slice_data(alpha, sliced_planes, slice_locations),
+            r"$\alpha$",
+            xlabel,
+            ylabel,
+        )
+    ]
     for i in range(3):
-        figures.append(_plot_slice(
-            get_slice_data(beta_down[i], sliced_planes, slice_locations),
-            rf"$\beta_{i + 1}$", xlabel, ylabel))
+        figures.append(
+            _plot_slice(
+                get_slice_data(beta_down[i], sliced_planes, slice_locations),
+                rf"$\beta_{i + 1}$",
+                xlabel,
+                ylabel,
+            )
+        )
     for i in range(3):
         for j in range(i, 3):
-            figures.append(_plot_slice(
-                get_slice_data(gamma_down[i, j], sliced_planes, slice_locations),
-                rf"$\gamma_{{{i + 1}{j + 1}}}$", xlabel, ylabel))
+            figures.append(
+                _plot_slice(
+                    get_slice_data(gamma_down[i, j], sliced_planes, slice_locations),
+                    rf"$\gamma_{{{i + 1}{j + 1}}}$",
+                    xlabel,
+                    ylabel,
+                )
+            )
     return figures

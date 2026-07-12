@@ -38,13 +38,14 @@ def even_points_on_sphere(radius: float, count: int) -> np.ndarray:
     indices = np.arange(count)
     theta = 2.0 * np.pi * indices / golden_ratio
     phi = np.arccos(1.0 - 2.0 * (indices + 0.5) / count)
-    return radius * np.stack([np.cos(theta) * np.sin(phi),
-                              np.sin(theta) * np.sin(phi),
-                              np.cos(phi)])
+    return radius * np.stack(
+        [np.cos(theta) * np.sin(phi), np.sin(theta) * np.sin(phi), np.cos(phi)]
+    )
 
 
-def generate_uniform_field(field_type: str, num_angular_vec: int = 100,
-                           num_time_vec: int = 10) -> np.ndarray:
+def generate_uniform_field(
+    field_type: str, num_angular_vec: int = 100, num_time_vec: int = 10
+) -> np.ndarray:
     """Uniformly sampled null or timelike observer 4-vectors.
 
     Port of generateUniformField.m. Vectors are normalized to unit
@@ -65,12 +66,11 @@ def generate_uniform_field(field_type: str, num_angular_vec: int = 100,
         shells = np.linspace(0.0, 1.0, num_time_vec)
         field = np.ones((4, num_angular_vec, num_time_vec))
         for jj, bb in enumerate(shells):
-            field[1:, :, jj] = even_points_on_sphere(1.0 - bb,
-                                                     num_angular_vec)
+            field[1:, :, jj] = even_points_on_sphere(1.0 - bb, num_angular_vec)
     else:
         raise ValueError(
-            'Vector field type not generated, use either: "nulllike", '
-            '"timelike"')
+            'Vector field type not generated, use either: "nulllike", "timelike"'
+        )
     return field / np.sqrt(np.sum(field**2, axis=0))
 
 
@@ -83,58 +83,81 @@ def eulerian_transformation_matrix(g: np.ndarray) -> np.ndarray:
     g has shape (4, 4) + grid_shape.
     """
     factor0 = g[3, 3]
-    factor1 = -g[2, 3]**2 + g[2, 2]*factor0
-    factor2 = (2.0*g[1, 2]*g[1, 3]*g[2, 3] - g[3, 3]*g[1, 2]**2
-               - g[2, 2]*g[1, 3]**2 + g[1, 1]*factor1)
-    factor3 = (-2.0*g[3, 3]*g[0, 1]*g[0, 2]*g[1, 2]
-               + 2.0*g[0, 2]*g[0, 3]*g[1, 2]*g[1, 3]
-               + 2.0*g[0, 1]*g[0, 2]*g[1, 3]*g[2, 3]
-               + 2.0*g[0, 1]*g[0, 3]*g[1, 2]*g[2, 3]
-               - g[0, 1]**2*g[2, 3]**2
-               - g[0, 2]**2*g[1, 3]**2
-               - g[0, 3]**2*g[1, 2]**2
-               + g[2, 2]*(-2.0*g[0, 1]*g[0, 3]*g[1, 3]
-                          + g[3, 3]*g[0, 1]**2)
-               + g[1, 1]*(-2.0*g[0, 2]*g[0, 3]*g[2, 3]
-                          + g[3, 3]*g[0, 2]**2 + g[2, 2]*g[0, 3]**2)
-               - g[0, 0]*factor2)
+    factor1 = -(g[2, 3] ** 2) + g[2, 2] * factor0
+    factor2 = (
+        2.0 * g[1, 2] * g[1, 3] * g[2, 3]
+        - g[3, 3] * g[1, 2] ** 2
+        - g[2, 2] * g[1, 3] ** 2
+        + g[1, 1] * factor1
+    )
+    factor3 = (
+        -2.0 * g[3, 3] * g[0, 1] * g[0, 2] * g[1, 2]
+        + 2.0 * g[0, 2] * g[0, 3] * g[1, 2] * g[1, 3]
+        + 2.0 * g[0, 1] * g[0, 2] * g[1, 3] * g[2, 3]
+        + 2.0 * g[0, 1] * g[0, 3] * g[1, 2] * g[2, 3]
+        - g[0, 1] ** 2 * g[2, 3] ** 2
+        - g[0, 2] ** 2 * g[1, 3] ** 2
+        - g[0, 3] ** 2 * g[1, 2] ** 2
+        + g[2, 2] * (-2.0 * g[0, 1] * g[0, 3] * g[1, 3] + g[3, 3] * g[0, 1] ** 2)
+        + g[1, 1]
+        * (
+            -2.0 * g[0, 2] * g[0, 3] * g[2, 3]
+            + g[3, 3] * g[0, 2] ** 2
+            + g[2, 2] * g[0, 3] ** 2
+        )
+        - g[0, 0] * factor2
+    )
 
     M = np.zeros_like(g)
     with np.errstate(invalid="ignore", divide="ignore"):
-        M[0, 0] = np.sqrt(factor2/factor3)
-        norm10 = np.sqrt(factor2*factor3)
-        M[1, 0] = (g[0, 1]*g[2, 3]**2 + g[0, 2]*g[1, 2]*g[3, 3]
-                   - g[0, 2]*g[1, 3]*g[2, 3] - g[0, 3]*g[1, 2]*g[2, 3]
-                   + g[0, 3]*g[1, 3]*g[2, 2]
-                   - g[0, 1]*g[2, 2]*g[3, 3]) / norm10
-        M[2, 0] = (g[0, 2]*g[1, 3]**2 - g[0, 3]*g[1, 2]*g[1, 3]
-                   + g[0, 1]*g[1, 2]*g[3, 3] - g[0, 1]*g[1, 3]*g[2, 3]
-                   - g[0, 2]*g[1, 1]*g[3, 3]
-                   + g[0, 3]*g[1, 1]*g[2, 3]) / norm10
-        M[3, 0] = (g[0, 3]*g[1, 2]**2 - g[0, 2]*g[1, 2]*g[1, 3]
-                   - g[0, 1]*g[1, 2]*g[2, 3] + g[0, 1]*g[1, 3]*g[2, 2]
-                   + g[0, 2]*g[1, 1]*g[2, 3]
-                   - g[0, 3]*g[1, 1]*g[2, 2]) / norm10
+        M[0, 0] = np.sqrt(factor2 / factor3)
+        norm10 = np.sqrt(factor2 * factor3)
+        M[1, 0] = (
+            g[0, 1] * g[2, 3] ** 2
+            + g[0, 2] * g[1, 2] * g[3, 3]
+            - g[0, 2] * g[1, 3] * g[2, 3]
+            - g[0, 3] * g[1, 2] * g[2, 3]
+            + g[0, 3] * g[1, 3] * g[2, 2]
+            - g[0, 1] * g[2, 2] * g[3, 3]
+        ) / norm10
+        M[2, 0] = (
+            g[0, 2] * g[1, 3] ** 2
+            - g[0, 3] * g[1, 2] * g[1, 3]
+            + g[0, 1] * g[1, 2] * g[3, 3]
+            - g[0, 1] * g[1, 3] * g[2, 3]
+            - g[0, 2] * g[1, 1] * g[3, 3]
+            + g[0, 3] * g[1, 1] * g[2, 3]
+        ) / norm10
+        M[3, 0] = (
+            g[0, 3] * g[1, 2] ** 2
+            - g[0, 2] * g[1, 2] * g[1, 3]
+            - g[0, 1] * g[1, 2] * g[2, 3]
+            + g[0, 1] * g[1, 3] * g[2, 2]
+            + g[0, 2] * g[1, 1] * g[2, 3]
+            - g[0, 3] * g[1, 1] * g[2, 2]
+        ) / norm10
 
-        M[1, 1] = np.sqrt(factor1/factor2)
-        norm21 = np.sqrt(factor1*factor2)
-        M[2, 1] = (g[1, 3]*g[2, 3] - g[1, 2]*g[3, 3]) / norm21
-        M[3, 1] = (g[1, 2]*g[2, 3] - g[1, 3]*g[2, 2]) / norm21
+        M[1, 1] = np.sqrt(factor1 / factor2)
+        norm21 = np.sqrt(factor1 * factor2)
+        M[2, 1] = (g[1, 3] * g[2, 3] - g[1, 2] * g[3, 3]) / norm21
+        M[3, 1] = (g[1, 2] * g[2, 3] - g[1, 3] * g[2, 2]) / norm21
 
-        M[2, 2] = np.sqrt(factor0/factor1)
-        M[3, 2] = -g[2, 3] / np.sqrt(factor0*factor1)
+        M[2, 2] = np.sqrt(factor0 / factor1)
+        M[3, 2] = -g[2, 3] / np.sqrt(factor0 * factor1)
 
-        M[3, 3] = np.sqrt(1.0/factor0)
+        M[3, 3] = np.sqrt(1.0 / factor0)
 
     if np.isinf(M).any() or np.isnan(M).any():
-        warnings.warn("Eulerian transformation has non-finite entries -- "
-                      "numerical precision insufficient")
+        warnings.warn(
+            "Eulerian transformation has non-finite entries -- "
+            "numerical precision insufficient"
+        )
     return M
 
 
-def do_frame_transfer(metric: SpacetimeTensor,
-                      energy_tensor: SpacetimeTensor,
-                      frame: str = "eulerian") -> SpacetimeTensor:
+def do_frame_transfer(
+    metric: SpacetimeTensor, energy_tensor: SpacetimeTensor, frame: str = "eulerian"
+) -> SpacetimeTensor:
     """Transform the stress-energy tensor into the Eulerian frame.
 
     Port of doFrameTransfer.m: T_local = M^T T_cov M with M from the
@@ -142,16 +165,21 @@ def do_frame_transfer(metric: SpacetimeTensor,
     in the local orthonormal frame (T^0i = -T_0i under eta).
     """
     if frame.lower() != "eulerian":
-        raise ValueError(f"Unsupported frame '{frame}'; only 'eulerian' "
-                         "frame transfer is implemented")
+        raise ValueError(
+            f"Unsupported frame '{frame}'; only 'eulerian' "
+            "frame transfer is implemented"
+        )
     if (energy_tensor.frame or "").lower() == "eulerian":
         return energy_tensor
     if not verify_tensor(metric):
-        raise ValueError("Metric failed verification; see "
-                         "verify_tensor(metric, quiet=False)")
+        raise ValueError(
+            "Metric failed verification; see verify_tensor(metric, quiet=False)"
+        )
     if not verify_tensor(energy_tensor):
-        raise ValueError("Stress-energy failed verification; see "
-                         "verify_tensor(energy_tensor, quiet=False)")
+        raise ValueError(
+            "Stress-energy failed verification; see "
+            "verify_tensor(energy_tensor, quiet=False)"
+        )
 
     T_cov = change_tensor_index(energy_tensor, "covariant", metric)
     g_cov = change_tensor_index(metric, "covariant")
@@ -163,24 +191,31 @@ def do_frame_transfer(metric: SpacetimeTensor,
         T_local[i, 0] *= -1.0
 
     return SpacetimeTensor(
-        tensor=T_local, type=energy_tensor.type, index="contravariant",
-        coords=energy_tensor.coords, scaling=energy_tensor.scaling,
-        name=energy_tensor.name, params=dict(energy_tensor.params),
-        frame="eulerian")
+        tensor=T_local,
+        type=energy_tensor.type,
+        index="contravariant",
+        coords=energy_tensor.coords,
+        scaling=energy_tensor.scaling,
+        name=energy_tensor.name,
+        params=dict(energy_tensor.params),
+        frame="eulerian",
+    )
 
 
 def _lower_with_eta(T_contra: np.ndarray) -> np.ndarray:
     """T_mn = eta_ma eta_nb T^ab for local-frame components."""
     signs = np.einsum("m,n->mn", _ETA_DIAG, _ETA_DIAG)
-    return T_contra * signs.reshape((4, 4) + (1,)*(T_contra.ndim - 2))
+    return T_contra * signs.reshape((4, 4) + (1,) * (T_contra.ndim - 2))
 
 
 def get_energy_conditions(
-        energy_tensor: SpacetimeTensor, metric: SpacetimeTensor,
-        condition: str, num_angular_vec: int = 100, num_time_vec: int = 10,
-        return_vec: bool = False,
-) -> Union[np.ndarray,
-           Tuple[np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]]:
+    energy_tensor: SpacetimeTensor,
+    metric: SpacetimeTensor,
+    condition: str,
+    num_angular_vec: int = 100,
+    num_time_vec: int = 10,
+    return_vec: bool = False,
+) -> Union[np.ndarray, Tuple[np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]]:
     """Energy-condition violation map (MATLAB getEnergyConditions).
 
     Parameters
@@ -210,26 +245,30 @@ def get_energy_conditions(
     """
     condition = condition.lower()
     if condition not in CONDITIONS:
-        raise ValueError('Incorrect energy condition input, use either: '
-                         '"Null", "Weak", "Dominant", "Strong"')
+        raise ValueError(
+            "Incorrect energy condition input, use either: "
+            '"Null", "Weak", "Dominant", "Strong"'
+        )
     if metric.coords.lower() != "cartesian":
-        warnings.warn("Evaluation not verified for coordinate systems "
-                      "other than Cartesian!")
+        warnings.warn(
+            "Evaluation not verified for coordinate systems other than Cartesian!"
+        )
     if not verify_tensor(metric):
-        raise ValueError("Metric failed verification; see "
-                         "verify_tensor(metric, quiet=False)")
+        raise ValueError(
+            "Metric failed verification; see verify_tensor(metric, quiet=False)"
+        )
     if not verify_tensor(energy_tensor):
-        raise ValueError("Stress-energy failed verification; see "
-                         "verify_tensor(energy_tensor, quiet=False)")
+        raise ValueError(
+            "Stress-energy failed verification; see "
+            "verify_tensor(energy_tensor, quiet=False)"
+        )
 
     local = do_frame_transfer(metric, energy_tensor, "eulerian")
     T_cov = _lower_with_eta(np.asarray(local.tensor, dtype=float))
     grid_shape = metric.grid_shape
 
-    field_type = "nulllike" if condition in ("null", "dominant") \
-        else "timelike"
-    vec_field = generate_uniform_field(field_type, num_angular_vec,
-                                       num_time_vec)
+    field_type = "nulllike" if condition in ("null", "dominant") else "timelike"
+    vec_field = generate_uniform_field(field_type, num_angular_vec, num_time_vec)
 
     violation_map = np.full(grid_shape, np.nan)
     vec = None
@@ -259,8 +298,8 @@ def get_energy_conditions(
         if return_vec:
             vec = np.zeros(grid_shape + (num_angular_vec, num_time_vec))
         trace = np.einsum("m,mm...->...", _ETA_DIAG, T_cov)
-        eta = np.diag(_ETA_DIAG).reshape((4, 4) + (1,)*len(grid_shape))
-        effective = T_cov - 0.5*trace*eta
+        eta = np.diag(_ETA_DIAG).reshape((4, 4) + (1,) * len(grid_shape))
+        effective = T_cov - 0.5 * trace * eta
         for jj in range(num_time_vec):
             for ii in range(num_angular_vec):
                 t = vec_field[:, ii, jj]
@@ -283,7 +322,7 @@ def get_energy_conditions(
             # Signed magnitude: positive norm means a spacelike
             # (violating) flux; the final sign flip makes negative
             # values violating, consistent with the other conditions.
-            signed = np.sign(norm)*np.sqrt(np.abs(norm))
+            signed = np.sign(norm) * np.sqrt(np.abs(norm))
             violation_map = np.fmax(violation_map, signed)
             if return_vec:
                 vec[..., ii] = signed

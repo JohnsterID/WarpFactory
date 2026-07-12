@@ -12,8 +12,9 @@ The tensor dict is interpreted as covariant components on a locally flat
 produces stress-energy on asymptotically flat slices.
 """
 
-import numpy as np
 from typing import Dict
+
+import numpy as np
 
 from ..solver import components_to_tensor
 
@@ -27,9 +28,9 @@ def _sphere_directions(count: int) -> np.ndarray:
     cos_theta = 1.0 - 2.0 * indices / count
     sin_theta = np.sqrt(1.0 - cos_theta**2)
     phi = golden_angle * indices
-    return np.stack([sin_theta * np.cos(phi),
-                     sin_theta * np.sin(phi),
-                     cos_theta], axis=1)
+    return np.stack(
+        [sin_theta * np.cos(phi), sin_theta * np.sin(phi), cos_theta], axis=1
+    )
 
 
 class EnergyConditions:
@@ -45,9 +46,12 @@ class EnergyConditions:
         Violations smaller than this are treated as numerical noise
     """
 
-    def __init__(self, num_directions: int = 32,
-                 velocities: tuple = (0.0, 0.3, 0.6, 0.9),
-                 tolerance: float = 1e-9):
+    def __init__(
+        self,
+        num_directions: int = 32,
+        velocities: tuple = (0.0, 0.3, 0.6, 0.9),
+        tolerance: float = 1e-9,
+    ):
         self.directions = _sphere_directions(num_directions)
         self.velocities = velocities
         self.tolerance = tolerance
@@ -94,7 +98,9 @@ class EnergyConditions:
         T = self._tensor(T_munu)
         g_inv = np.linalg.inv(_MINKOWSKI)
         trace = np.einsum("mn,mng->g", g_inv, T)
-        effective = T - 0.5 * trace[np.newaxis, np.newaxis, :] * _MINKOWSKI[:, :, np.newaxis]
+        effective = (
+            T - 0.5 * trace[np.newaxis, np.newaxis, :] * _MINKOWSKI[:, :, np.newaxis]
+        )
         for t_vec in self._timelike_observers():
             density = np.einsum("m,mng,n->g", t_vec, effective, t_vec)
             if np.any(density < -self.tolerance):

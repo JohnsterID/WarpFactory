@@ -30,8 +30,9 @@ def minkowski_three_plus_one(grid_shape) -> Tuple[np.ndarray, np.ndarray, np.nda
     return alpha, beta, gamma
 
 
-def three_plus_one_builder(alpha: np.ndarray, beta: np.ndarray,
-                           gamma: np.ndarray) -> np.ndarray:
+def three_plus_one_builder(
+    alpha: np.ndarray, beta: np.ndarray, gamma: np.ndarray
+) -> np.ndarray:
     """Assemble the covariant metric from ADM variables.
 
     g_00 = -alpha^2 + beta^i beta_i,  g_0i = beta_i,  g_ij = gamma_ij
@@ -44,7 +45,7 @@ def three_plus_one_builder(alpha: np.ndarray, beta: np.ndarray,
     beta_up = np.einsum("ij...,j...->i...", gamma_up, beta)
 
     g = np.zeros((4, 4) + grid_shape)
-    g[0, 0] = -alpha**2 + np.einsum("i...,i...->...", beta_up, beta)
+    g[0, 0] = -(alpha**2) + np.einsum("i...,i...->...", beta_up, beta)
     for i in range(3):
         g[0, i + 1] = beta[i]
         g[i + 1, 0] = beta[i]

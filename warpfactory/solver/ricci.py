@@ -9,8 +9,9 @@ vanish for the stationary slices used here). Spherical mode uses the
 closed-form profile expressions in SphericalCurvature.
 """
 
-import numpy as np
 from typing import Dict
+
+import numpy as np
 
 from .christoffel import ChristoffelSymbols
 from .finite_difference import FiniteDifference
@@ -30,8 +31,9 @@ class RicciTensor:
         self.fd = FiniteDifference(order=order)
         self.spherical = SphericalCurvature(order=order)
 
-    def calculate(self, metric: Dict[str, np.ndarray],
-                  coords: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def calculate(
+        self, metric: Dict[str, np.ndarray], coords: Dict[str, np.ndarray]
+    ) -> Dict[str, np.ndarray]:
         """Calculate Ricci tensor components.
 
         Parameters
@@ -57,8 +59,9 @@ class RicciTensor:
                 components[f"R_{COORDS[mu]}{COORDS[nu]}"] = ricci_array[mu, nu]
         return components
 
-    def calculate_array(self, metric: Dict[str, np.ndarray],
-                        x: np.ndarray) -> np.ndarray:
+    def calculate_array(
+        self, metric: Dict[str, np.ndarray], x: np.ndarray
+    ) -> np.ndarray:
         gamma = self.christoffel.calculate_array(metric, x)
         grid_shape = gamma.shape[3:]
 
@@ -89,8 +92,9 @@ class RiemannTensor:
         self.christoffel = ChristoffelSymbols(order=order)
         self.fd = FiniteDifference(order=order)
 
-    def calculate_array(self, metric: Dict[str, np.ndarray],
-                        x: np.ndarray) -> np.ndarray:
+    def calculate_array(
+        self, metric: Dict[str, np.ndarray], x: np.ndarray
+    ) -> np.ndarray:
         """Riemann tensor as an array of shape (4, 4, 4, 4) + grid.
 
         R^a_bcd = d_c Gamma^a_db - d_d Gamma^a_cb
@@ -118,14 +122,15 @@ class RiemannTensor:
                         riemann[a, b, c, d] = term
         return riemann
 
-    def kretschmann(self, metric: Dict[str, np.ndarray],
-                    x: np.ndarray) -> np.ndarray:
+    def kretschmann(self, metric: Dict[str, np.ndarray], x: np.ndarray) -> np.ndarray:
         """Kretschmann scalar K = R_abcd R^abcd."""
         riemann = self.calculate_array(metric, x)
         g = components_to_tensor(metric, "g")
         g_inv = inverse_tensor(g)
         r_down = np.einsum("ae...,ebcd...->abcd...", g, riemann)
-        r_up = np.einsum("bf...,cg...,dh...,afgh...->abcd...", g_inv, g_inv, g_inv, riemann)
+        r_up = np.einsum(
+            "bf...,cg...,dh...,afgh...->abcd...", g_inv, g_inv, g_inv, riemann
+        )
         return np.einsum("abcd...,abcd...->...", r_down, r_up)
 
 
@@ -136,8 +141,9 @@ class RicciScalar:
         self.ricci_tensor = RicciTensor(order=order)
         self.spherical = SphericalCurvature(order=order)
 
-    def calculate(self, metric: Dict[str, np.ndarray],
-                  coords: Dict[str, np.ndarray]) -> np.ndarray:
+    def calculate(
+        self, metric: Dict[str, np.ndarray], coords: Dict[str, np.ndarray]
+    ) -> np.ndarray:
         if _is_spherical(metric):
             return self.spherical.ricci_scalar(metric, coords)
 

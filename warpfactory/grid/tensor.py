@@ -67,7 +67,8 @@ def verify_tensor(t: SpacetimeTensor, quiet: bool = True) -> bool:
     arr = np.asarray(t.tensor)
     if arr.ndim != 6 or arr.shape[:2] != (4, 4):
         problems.append(
-            f"tensor must have shape (4, 4, Nt, Nx, Ny, Nz), got {arr.shape}")
+            f"tensor must have shape (4, 4, Nt, Nx, Ny, Nz), got {arr.shape}"
+        )
     if t.coords.lower() != "cartesian":
         problems.append(f"unsupported coordinates '{t.coords}'")
     if t.index.lower() not in VALID_INDICES:
@@ -96,8 +97,9 @@ def _mix_second(tensor: np.ndarray, transform: np.ndarray) -> np.ndarray:
     return np.einsum("ia...,aj...->ij...", tensor, transform)
 
 
-def change_tensor_index(input_tensor: SpacetimeTensor, index: str,
-                        metric: Optional[SpacetimeTensor] = None) -> SpacetimeTensor:
+def change_tensor_index(
+    input_tensor: SpacetimeTensor, index: str, metric: Optional[SpacetimeTensor] = None
+) -> SpacetimeTensor:
     """Return a copy of the tensor re-expressed in the requested index.
 
     Python port of changeTensorIndex.m. For metric tensors only
@@ -108,28 +110,35 @@ def change_tensor_index(input_tensor: SpacetimeTensor, index: str,
     """
     index = index.lower()
     if index not in VALID_INDICES:
-        raise ValueError(
-            f"index must be one of {VALID_INDICES}, got '{index}'")
+        raise ValueError(f"index must be one of {VALID_INDICES}, got '{index}'")
 
     current = input_tensor.index.lower()
 
     if input_tensor.type.lower() == "metric":
-        if index in ("mixedupdown", "mixeddownup") or \
-                current in ("mixedupdown", "mixeddownup"):
+        if index in ("mixedupdown", "mixeddownup") or current in (
+            "mixedupdown",
+            "mixeddownup",
+        ):
             raise ValueError("Metric tensors cannot use mixed indices")
         if current == index:
             new_array = input_tensor.tensor.copy()
         else:
             new_array = inverse_tensor(input_tensor.tensor)
         return SpacetimeTensor(
-            tensor=new_array, type=input_tensor.type, index=index,
-            coords=input_tensor.coords, scaling=input_tensor.scaling,
-            name=input_tensor.name, params=dict(input_tensor.params),
-            frame=input_tensor.frame)
+            tensor=new_array,
+            type=input_tensor.type,
+            index=index,
+            coords=input_tensor.coords,
+            scaling=input_tensor.scaling,
+            name=input_tensor.name,
+            params=dict(input_tensor.params),
+            frame=input_tensor.frame,
+        )
 
     if metric is None:
         raise ValueError(
-            "metric is required when changing the index of non-metric tensors")
+            "metric is required when changing the index of non-metric tensors"
+        )
     if metric.index.lower() in ("mixedupdown", "mixeddownup"):
         raise ValueError("Metric tensor cannot be used in mixed index")
 
@@ -147,9 +156,10 @@ def change_tensor_index(input_tensor: SpacetimeTensor, index: str,
         new_array = _mix_first(input_tensor.tensor, g_down)
     elif (current, index) == ("covariant", "mixedupdown"):
         new_array = _mix_first(input_tensor.tensor, g_up)
-    elif (current, index) == ("covariant", "mixeddownup"):
-        new_array = _mix_second(input_tensor.tensor, g_up)
-    elif (current, index) == ("mixedupdown", "contravariant"):
+    elif (current, index) == ("covariant", "mixeddownup") or (current, index) == (
+        "mixedupdown",
+        "contravariant",
+    ):
         new_array = _mix_second(input_tensor.tensor, g_up)
     elif (current, index) == ("mixedupdown", "covariant"):
         new_array = _mix_first(input_tensor.tensor, g_down)
@@ -158,14 +168,18 @@ def change_tensor_index(input_tensor: SpacetimeTensor, index: str,
     elif (current, index) == ("mixeddownup", "contravariant"):
         new_array = _mix_first(input_tensor.tensor, g_up)
     else:
-        raise ValueError(
-            f"unsupported index conversion '{current}' -> '{index}'")
+        raise ValueError(f"unsupported index conversion '{current}' -> '{index}'")
 
     return SpacetimeTensor(
-        tensor=new_array, type=input_tensor.type, index=index,
-        coords=input_tensor.coords, scaling=input_tensor.scaling,
-        name=input_tensor.name, params=dict(input_tensor.params),
-        frame=input_tensor.frame)
+        tensor=new_array,
+        type=input_tensor.type,
+        index=index,
+        coords=input_tensor.coords,
+        scaling=input_tensor.scaling,
+        name=input_tensor.name,
+        params=dict(input_tensor.params),
+        frame=input_tensor.frame,
+    )
 
 
 def _metric_both_forms(metric: SpacetimeTensor) -> Tuple[np.ndarray, np.ndarray]:
