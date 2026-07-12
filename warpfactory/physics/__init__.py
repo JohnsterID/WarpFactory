@@ -1,5 +1,6 @@
 """Advanced physics calculations."""
 
+from .bondi_sachs import BondiSachsFlux
 from .causal import CausalStructure
 from .conservation import StressEnergyConservation
 from .junction import IsraelJunction
@@ -12,6 +13,7 @@ __all__ = [
     "CausalStructure",
     "StressEnergyConservation",
     "IsraelJunction",
+    "BondiSachsFlux",
     "QuantumEffects",
     "FordRomanInequality",
 ]
