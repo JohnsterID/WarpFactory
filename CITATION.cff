@@ -1,0 +1,55 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it using the metadata below,
+  and cite the WarpFactory method paper listed in the references.
+title: WarpFactory (Python port)
+type: software
+authors:
+  - name: JohnsterID
+    website: https://github.com/JohnsterID
+repository-code: https://github.com/JohnsterID/WarpFactory
+url: https://johnsterid.github.io/WarpFactory/
+license: MIT
+keywords:
+  - general relativity
+  - warp drive
+  - numerical relativity
+  - stress-energy tensor
+  - energy conditions
+abstract: >-
+  Python port of the WarpFactory numerical toolkit for analyzing warp
+  drive spacetimes: metric builders, a finite-difference Einstein field
+  equation solver, energy-condition evaluation, and visualization,
+  validated against the original MATLAB implementation and the
+  published paper results.
+references:
+  - type: article
+    title: Analyzing warp drive spacetimes with Warp Factory
+    authors:
+      - family-names: Helmerich
+        given-names: Christopher
+      - family-names: Fuchs
+        given-names: Jared
+      - family-names: Bobrick
+        given-names: Alexey
+      - family-names: Sellers
+        given-names: Luke
+      - family-names: Melcher
+        given-names: Brandon
+      - family-names: Martire
+        given-names: Gianni
+    journal: Classical and Quantum Gravity
+    volume: 41
+    issue: 9
+    start: 095009
+    year: 2024
+    doi: 10.1088/1361-6382/ad2e42
+  - type: software
+    title: WarpFactory (original MATLAB implementation)
+    authors:
+      - family-names: Helmerich
+        given-names: Christopher
+      - family-names: Fuchs
+        given-names: Jared
+    repository-code: https://github.com/NerdsWithAttitudes/WarpFactory
+    license: MIT

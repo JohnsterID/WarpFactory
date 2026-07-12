@@ -1,0 +1,6 @@
+#!/bin/bash
+# repo2docker runs this from the repository root after the base
+# environment is built; install the package with the notebook extra so
+# examples/interactive_explorer.ipynb works out of the box on Binder.
+set -e
+pip install ".[jupyter]"

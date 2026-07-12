@@ -1,0 +1,53 @@
+site_name: WarpFactory (Python)
+site_description: >-
+  Python port of WarpFactory, a numerical toolkit for analyzing warp
+  drive spacetimes with Einstein's theory of General Relativity.
+site_url: https://johnsterid.github.io/WarpFactory/
+repo_url: https://github.com/JohnsterID/WarpFactory
+repo_name: JohnsterID/WarpFactory
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+
+nav:
+  - Overview: index.md
+  - Installation: installation.md
+  - Quickstart: quickstart.md
+  - Applications: applications.md
+  - Interactive Explorer: interactive.md
+  - GPU Acceleration: gpu.md
+  - MATLAB Parity: parity.md
+  - Contributing: contributing.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.arithmatex:
+      generic: true
+  - toc:
+      permalink: true
+
+extra_javascript:
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js

@@ -55,3 +55,6 @@ AGENTS.md
 
 # Generated example figures
 examples/*.png
+
+# MkDocs build output
+site/
