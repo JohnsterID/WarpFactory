@@ -16,15 +16,21 @@ numpy = "^1.26.4"
 scipy = "^1.12.0"
 matplotlib = "^3.8.3"
 # Optional heavy backends: the core numpy/scipy pipeline must work
-# without them (warpfactory.torch and warpfactory.gui are the only
-# consumers, both import-guarded or self-contained subpackages).
+# without them (warpfactory.torch, warpfactory.gui, and the ipywidgets
+# front end of warpfactory.interactive are the only consumers, all
+# import-guarded or self-contained subpackages).
 torch = { version = "^2.2.1", optional = true }
 PyQt6 = { version = "^6.6.1", optional = true }
 PyQt6-Qt6 = { version = "^6.6.1", optional = true }
+ipywidgets = { version = "^8.1.2", optional = true }
+# ipython is a hard dependency of ipywidgets, declared explicitly
+# because warpfactory.interactive imports IPython.display directly.
+ipython = { version = ">=8.0", optional = true }
 
 [tool.poetry.extras]
 torch = ["torch"]
 gui = ["PyQt6", "PyQt6-Qt6"]
+jupyter = ["ipywidgets", "ipython"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
@@ -82,6 +88,7 @@ module = [
     "numpy.*",
     "scipy.*",
     "matplotlib.*",
-    "torch.*"
+    "torch.*",
+    "ipywidgets.*"
 ]
 ignore_missing_imports = true

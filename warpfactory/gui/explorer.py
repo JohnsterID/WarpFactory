@@ -1,4 +1,10 @@
-"""Main window for metric exploration."""
+"""Main window for metric exploration.
+
+Maintenance-only: the Qt explorer is kept for compatibility, but new
+interactive features land in warpfactory.interactive.JupyterExplorer.
+Both front ends share warpfactory.interactive.ExplorerModel for the
+catalog and the compute pipeline.
+"""
 
 import numpy as np
 from PyQt6.QtWidgets import (
@@ -10,31 +16,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from ..metrics import (
-    AlcubierreMetric,
-    LentzMetric,
-    MinkowskiMetric,
-    VanDenBroeckMetric,
-    WarpShellMetric,
-)
-from ..solver import EnergyTensor
+from ..interactive.model import METRIC_CATALOG, ExplorerModel
 from .energy import EnergyConditionViewer
 from .parameters import ParameterPanel
 from .plotter import MetricPlotter
 
-METRIC_CATALOG = {
-    "Alcubierre": (AlcubierreMetric, {"v_s": 2.0, "R": 1.0, "sigma": 0.5}),
-    "Lentz": (LentzMetric, {"v_s": 2.0, "R": 1.0, "sigma": 0.5}),
-    "Van Den Broeck": (
-        VanDenBroeckMetric,
-        {"v_s": 2.0, "R": 1.0, "B": 2.0, "sigma": 0.5},
-    ),
-    "Warp Shell": (
-        WarpShellMetric,
-        {"v_s": 2.0, "R": 1.0, "thickness": 0.2, "sigma": 0.5},
-    ),
-    "Minkowski": (MinkowskiMetric, {}),
-}
+__all__ = ["METRIC_CATALOG", "MetricExplorer"]
 
 
 class MetricExplorer(QMainWindow):
@@ -43,8 +30,8 @@ class MetricExplorer(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("WarpFactory Metric Explorer")
-        self.grid_x = np.linspace(-8.0, 8.0, 200)
-        self.energy_solver = EnergyTensor()
+        self.model = ExplorerModel(x=np.linspace(-8.0, 8.0, 200))
+        self.grid_x = self.model.x
         self._setup_ui()
 
     def _setup_ui(self):
@@ -87,8 +74,7 @@ class MetricExplorer(QMainWindow):
 
     def on_metric_changed(self, metric_name: str):
         """Rebuild the parameter panel and recompute for the new metric."""
-        _, defaults = METRIC_CATALOG[metric_name]
-        self.parameter_panel.set_parameters(defaults)
+        self.parameter_panel.set_parameters(self.model.defaults(metric_name))
         self.recompute()
 
     def on_parameter_changed(self, param: str, value: float):
@@ -96,15 +82,9 @@ class MetricExplorer(QMainWindow):
 
     def recompute(self):
         """Evaluate the selected metric and update both visualizations."""
-        metric_name = self.metric_selector.currentText()
-        metric_cls, _ = METRIC_CATALOG[metric_name]
-        params = self.parameter_panel.get_all_parameters()
-
-        x = self.grid_x
-        y = np.zeros_like(x)
-        z = np.zeros_like(x)
-        components = metric_cls().calculate(x, y, z, 0.0, **params)
-        self.plotter.set_metric(components, x)
-
-        stress_energy = self.energy_solver.calculate_from_metric(components, x)
-        self.energy_viewer.set_tensor(stress_energy, x)
+        result = self.model.evaluate(
+            self.metric_selector.currentText(),
+            self.parameter_panel.get_all_parameters(),
+        )
+        self.plotter.set_metric(result.metric, result.x)
+        self.energy_viewer.set_tensor(result.stress_energy, result.x)

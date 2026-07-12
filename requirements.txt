@@ -4,9 +4,11 @@ scipy>=1.12.0
 matplotlib>=3.8.3
 
 # Optional extras (mirror [tool.poetry.extras]); install with
-# pip install ".[torch]" and/or ".[gui]", or uncomment here:
+# pip install ".[torch]", ".[gui]" and/or ".[jupyter]", or uncomment here:
 # torch>=2.2.1
 # PyQt6>=6.6.1
+# ipywidgets>=8.1.2
+# ipython>=8.0
 
 # Dev tooling (mirrors [tool.poetry.group.dev.dependencies])
 pytest>=8.0.2

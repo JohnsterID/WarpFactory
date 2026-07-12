@@ -37,10 +37,11 @@ jobs:
         # Core install path (PyQt6 is the optional [gui] extra, so no Qt
         # system libraries are needed; GUI tests skip). The torch extra is
         # installed from the CPU wheel index to avoid the CUDA download.
+        # The jupyter extra is cheap, so the JupyterExplorer tests run.
         run: |
           python -m pip install --upgrade pip
           pip install pytest pytest-cov
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install .
+          pip install ".[jupyter]"
       - name: Run tests
         run: pytest warpfactory/tests -q --no-cov

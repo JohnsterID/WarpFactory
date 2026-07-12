@@ -66,6 +66,15 @@ A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory
 - Momentum flow lines
 - Custom physics-oriented colormaps
 
+### Interactive Exploration
+- Jupyter/ipywidgets explorer (`warpfactory.interactive`, the primary
+  interactive UI): live metric/stress-energy plots, light-cone tilt
+  with horizon and ergosphere markers, energy-condition verdicts, and
+  the Ford-Roman quantum inequality assessment as sliders move
+- PyQt6 desktop explorer (`warpfactory.gui`, maintenance-only): kept
+  working but no longer gaining features; both front ends share the
+  same `ExplorerModel` compute pipeline
+
 ## Installation
 
 ### Using pip
@@ -78,9 +87,10 @@ cd WarpFactory
 pip install .
 
 # Optional extras (can be combined):
-pip install ".[torch]"      # PyTorch backend (GPU acceleration)
-pip install ".[gui]"        # PyQt6 desktop metric explorer
-pip install ".[torch,gui]"  # everything
+pip install ".[torch]"        # PyTorch backend (GPU acceleration)
+pip install ".[jupyter]"      # ipywidgets interactive explorer (recommended)
+pip install ".[gui]"          # PyQt6 desktop metric explorer (maintenance-only)
+pip install ".[torch,jupyter,gui]"  # everything
 ```
 
 ### Using poetry (recommended)
@@ -91,8 +101,8 @@ pip install poetry
 # Install dependencies and package
 git clone https://github.com/JohnsterID/WarpFactory.git
 cd WarpFactory
-poetry install                        # core only
-poetry install --extras "torch gui"   # with optional backends
+poetry install                                # core only
+poetry install --extras "torch jupyter gui"   # with optional backends
 ```
 
 ### Requirements
@@ -103,7 +113,8 @@ poetry install --extras "torch gui"   # with optional backends
 - SciPy
 - Matplotlib (for visualization)
 - PyTorch (optional `[torch]` extra, for GPU acceleration)
-- PyQt6 (optional `[gui]` extra, for the desktop metric explorer)
+- ipywidgets (optional `[jupyter]` extra, for the interactive notebook explorer)
+- PyQt6 (optional `[gui]` extra, for the maintenance-only desktop metric explorer)
 
 #### System Dependencies
 For the GUI components, you need Qt6 system libraries:
@@ -184,6 +195,27 @@ is_null = conditions.check_null(T_munu)
 is_strong = conditions.check_strong(T_munu)
 is_dominant = conditions.check_dominant(T_munu)
 ```
+
+### Interactive Exploration in Jupyter
+```python
+from warpfactory.interactive import JupyterExplorer
+
+# Live explorer: metric dropdown, parameter sliders, diagnostics
+JupyterExplorer().display()
+```
+
+The same pipeline is scriptable without widgets:
+```python
+from warpfactory.interactive import ExplorerModel
+
+model = ExplorerModel()
+result = model.evaluate("Alcubierre", {"v_s": 2.0, "R": 1.0, "sigma": 4.0},
+                        diagnostics=True)
+print(result.conditions)           # energy condition verdicts
+print(result.quantum_inequality)   # Ford-Roman wall-thickness check
+```
+
+See `examples/interactive_explorer.ipynb` for a full walkthrough.
 
 ### Quantum Inequality Analysis
 ```python
