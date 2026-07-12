@@ -3,6 +3,7 @@
 from .causal import CausalStructure
 from .conservation import StressEnergyConservation
 from .quantum import QuantumEffects
+from .quantum_inequality import FordRomanInequality
 from .tidal import TidalForces
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "CausalStructure",
     "StressEnergyConservation",
     "QuantumEffects",
+    "FordRomanInequality",
 ]

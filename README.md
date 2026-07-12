@@ -57,6 +57,8 @@ A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory
 - Event horizon finder
 - Singularity detector
 - Gravitational lensing
+- Ford-Roman quantum inequality evaluator (Pfenning-Ford warp bubble
+  wall-thickness and total-energy bounds)
 
 ### Visualization
 - Tensor component plots
@@ -181,6 +183,22 @@ is_weak = conditions.check_weak(T_munu)
 is_null = conditions.check_null(T_munu)
 is_strong = conditions.check_strong(T_munu)
 is_dominant = conditions.check_dominant(T_munu)
+```
+
+### Quantum Inequality Analysis
+```python
+from warpfactory.physics import FordRomanInequality
+
+qi = FordRomanInequality()
+
+# Ford-Roman bound and Lorentzian-sampled energy density (SI units)
+bound = qi.sampling_bound(tau0=1e-10)          # J/m^3
+verdict = qi.check_sampled(rho, tau, tau0=1e-10)
+
+# Pfenning-Ford warp bubble constraints: wall thickness vs the quantum
+# inequality limit, and the total (negative) wall energy in Joules
+bubble = qi.check_warp_bubble(v_b=2.0, R=100.0, sigma=8.0)
+print(bubble["delta"], bubble["delta_max"], bubble["total_energy"])
 ```
 
 ### Unit Conversions
@@ -402,3 +420,5 @@ For more information about the original implementation, visit:
 - Alcubierre, M. (1994). The warp drive: hyper-fast travel within general relativity. Classical and Quantum Gravity, 11(5), L73.
 - Lentz, E. W. (2021). Breaking the warp barrier: Hyper-fast solitons in Einstein-Maxwell-plasma theory. Classical and Quantum Gravity, 38(7), 075015.
 - Van Den Broeck, C. (1999). A 'warp drive' with more reasonable total energy requirements. Classical and Quantum Gravity, 16(12), 3973.
+- Ford, L. H., & Roman, T. A. (1995). Averaged energy conditions and quantum inequalities. Physical Review D, 51(8), 4277.
+- Pfenning, M. J., & Ford, L. H. (1997). The unphysical nature of 'warp drive'. Classical and Quantum Gravity, 14(7), 1743. (arXiv gr-qc/9702026)
