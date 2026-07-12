@@ -1,0 +1,3 @@
+# Run: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# Mechanical ruff check --fix + ruff format adoption commit
+060b99030d3fc9f1a8261443eaa7677e566df84a
