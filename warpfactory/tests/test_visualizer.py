@@ -151,7 +151,7 @@ def test_colormaps():
     data = np.sin(X) * np.cos(Y)
 
     fig, ax = plt.subplots()
-    im = ax.pcolormesh(X, Y, data, cmap=cmap)
+    ax.pcolormesh(X, Y, data, cmap=cmap)
     assert isinstance(fig, plt.Figure)
 
     plt.close("all")

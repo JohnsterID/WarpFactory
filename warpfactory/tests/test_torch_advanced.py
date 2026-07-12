@@ -46,7 +46,7 @@ def test_metric_batch_processing(device, spatial_grid_torch, batch_params):
     assert len(metrics) == 3  # Should match number of parameter sets
 
     # Check each metric
-    for i, metric in enumerate(metrics):
+    for metric in metrics:
         # Check device
         assert all(comp.device == device for comp in metric.values())
 

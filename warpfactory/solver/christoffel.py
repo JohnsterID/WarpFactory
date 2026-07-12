@@ -21,7 +21,10 @@ from .tensor_utils import COORDS, components_to_tensor, inverse_tensor
 
 
 class ChristoffelSymbols:
-    """Calculate Christoffel symbols Gamma^a_bc = g^{ad}(d_b g_dc + d_c g_db - d_d g_bc)/2."""
+    """Calculate Christoffel symbols.
+
+    Gamma^a_bc = g^{ad} (d_b g_dc + d_c g_db - d_d g_bc) / 2
+    """
 
     def __init__(self, order: int = 4):
         self.fd = FiniteDifference(order=order)

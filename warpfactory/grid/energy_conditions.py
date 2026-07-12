@@ -150,7 +150,8 @@ def eulerian_transformation_matrix(g: np.ndarray) -> np.ndarray:
     if np.isinf(M).any() or np.isnan(M).any():
         warnings.warn(
             "Eulerian transformation has non-finite entries -- "
-            "numerical precision insufficient"
+            "numerical precision insufficient",
+            stacklevel=2,
         )
     return M
 
@@ -251,7 +252,8 @@ def get_energy_conditions(
         )
     if metric.coords.lower() != "cartesian":
         warnings.warn(
-            "Evaluation not verified for coordinate systems other than Cartesian!"
+            "Evaluation not verified for coordinate systems other than Cartesian!",
+            stacklevel=2,
         )
     if not verify_tensor(metric):
         raise ValueError(

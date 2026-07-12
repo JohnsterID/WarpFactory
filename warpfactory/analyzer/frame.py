@@ -30,8 +30,6 @@ class FrameTransformer:
 
         # Get original components
         g_tt = metric["g_tt"]
-        g_tx = metric.get("g_tx", np.zeros_like(g_tt))
-        g_xx = metric.get("g_xx", np.ones_like(g_tt))
 
         # Transform components
         g_tt_new = g_tt  # Time-time component is invariant

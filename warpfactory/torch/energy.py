@@ -40,9 +40,7 @@ class TorchEnergyTensor:
             Energy-momentum tensor components
         """
         # Extract metric components
-        g_tt = metric["g_tt"]
         g_tx = metric["g_tx"]
-        g_xx = metric["g_xx"]
 
         # Calculate energy density (T_tt)
         # For warp drive, this comes from the Einstein field equations

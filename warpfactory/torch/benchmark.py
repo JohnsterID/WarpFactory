@@ -224,7 +224,8 @@ class TorchBenchmark:
         # Energy tensor
         torch.cuda.synchronize()
         start = time.perf_counter()
-        T_munu = {
+        # Result discarded: only the construction time is measured.
+        _ = {
             "T_tt": -torch.abs(metric["g_tx"]) / (8 * torch.pi),
             "T_xx": -torch.abs(metric["g_tx"]) / (24 * torch.pi),
         }

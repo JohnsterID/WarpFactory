@@ -21,7 +21,7 @@ def test_metric_explorer(app, metric_params, spatial_grid):
     explorer = MetricExplorer()
 
     assert explorer.windowTitle() == "WarpFactory Metric Explorer"
-    assert explorer.isVisible() == False
+    assert not explorer.isVisible()
 
     metric_combo = explorer.metric_selector
     item_texts = [metric_combo.itemText(i) for i in range(metric_combo.count())]
@@ -116,4 +116,4 @@ def test_energy_condition_viewer(app, test_energy_tensor):
     assert viewer.current_mode == "pressure"
 
     viewer.highlight_violations(True)
-    assert viewer.violations_visible == True
+    assert viewer.violations_visible
