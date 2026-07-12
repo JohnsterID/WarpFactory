@@ -357,6 +357,13 @@ metric_cpu = {k: v.cpu() for k, v in metric.items()}
 
 ## Parity with the MATLAB original
 
+This port is based on the upstream
+[NerdsWithAttitudes/WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory)
+MATLAB code as of upstream commit `03b10cb` (the last upstream commit
+at the time of porting). This repository's git history starts at the
+Python port; the MATLAB development history lives in the upstream
+repository.
+
 The `warpfactory.grid` package implements the full MATLAB WarpFactory
 grid pipeline:
 
