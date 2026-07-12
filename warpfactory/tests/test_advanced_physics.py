@@ -1,5 +1,8 @@
 """Test advanced physics calculations."""
 
+import subprocess
+import sys
+
 import pytest
 import numpy as np
 import torch
@@ -159,6 +162,25 @@ def test_quantum_effects():
     assert isinstance(backreaction, dict)
     assert "metric_correction" in backreaction
     assert "lifetime" in backreaction
+
+def test_physics_imports_without_torch():
+    """warpfactory.physics must work when torch is not installed.
+
+    torch is an optional heavy backend; only the *_batch methods of
+    QuantumEffects use it. Blocking torch in a subprocess simulates an
+    environment without it and exercises the scalar code path.
+    """
+    script = (
+        "import sys\n"
+        "sys.modules['torch'] = None\n"
+        "from warpfactory.physics import QuantumEffects\n"
+        "q = QuantumEffects()\n"
+        "T = q.hawking_temperature(1.0)\n"
+        "assert T > 0\n"
+    )
+    result = subprocess.run([sys.executable, "-c", script],
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
 
 @pytest.mark.gpu
 def test_gpu_quantum_effects():

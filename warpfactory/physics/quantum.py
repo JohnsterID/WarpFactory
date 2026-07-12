@@ -1,8 +1,18 @@
 """Quantum effect calculations."""
 
+from __future__ import annotations
+
 import numpy as np
-import torch
-from typing import Dict, Union
+from typing import Dict
+
+# torch is an optional heavy backend: only the *_batch methods consume
+# torch.Tensor inputs, and they use plain arithmetic that works on any
+# tensor passed in. Guard the import so the core numpy/scipy pipeline
+# (hawking_temperature, vacuum_polarization, ...) works without torch.
+try:
+    import torch
+except ImportError:
+    torch = None
 
 class QuantumEffects:
     """Calculate quantum effects in curved spacetime."""
