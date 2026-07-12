@@ -6,6 +6,21 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # version pinned to the dev dependency in pyproject.toml so a new
+      # ruff release cannot change CI results without a code change.
+      - uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.15.21"
+          args: check
+      - uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.15.21"
+          args: format --check
+
   test:
     runs-on: ubuntu-latest
     strategy:
