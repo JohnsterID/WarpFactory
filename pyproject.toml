@@ -29,11 +29,8 @@ gui = ["PyQt6", "PyQt6-Qt6"]
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
 pytest-cov = "^4.1.0"
-black = "^24.2.0"
-isort = "^5.13.2"
-flake8 = "^7.0.0"
+ruff = "^0.15.21"
 mypy = "^1.8.0"
-pylint = "^3.0.3"
 
 [build-system]
 requires = ["poetry-core"]
@@ -48,16 +45,24 @@ markers = [
     "gpu: marks tests that require GPU support"
 ]
 
-[tool.black]
+[tool.ruff]
 line-length = 88
-target-version = ['py39']
+target-version = "py39"
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: import sorting (isort-compatible),
+# B: bugbear, C4: comprehensions, SIM: simplify, NPY: numpy-specific.
+select = ["E", "W", "F", "I", "B", "C4", "SIM", "NPY"]
+
+[tool.ruff.lint.per-file-ignores]
+# Optional-backend guards import late by design (importorskip pattern).
+"warpfactory/tests/test_torch.py" = ["E402"]
+"warpfactory/tests/test_torch_advanced.py" = ["E402"]
 
 [tool.mypy]
-python_version = "3.9"
+# No python_version pin: modern numpy stubs use `type` statements that
+# mypy rejects when told to target 3.9, so check against the running
+# interpreter (which matches the installed numpy).
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

@@ -8,6 +8,8 @@ matplotlib>=3.8.3
 # torch>=2.2.1
 # PyQt6>=6.6.1
 
-# Test tooling (mirrors [tool.poetry.group.dev.dependencies])
+# Dev tooling (mirrors [tool.poetry.group.dev.dependencies])
 pytest>=8.0.2
 pytest-cov>=4.1.0
+ruff>=0.15.21
+mypy>=1.8.0

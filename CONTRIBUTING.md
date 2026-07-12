@@ -42,8 +42,14 @@ Thank you for your interest in contributing to the Python port of WarpFactory! T
 
 ## Code Style
 
-- Follow PEP 8 guidelines
-- Use type hints for all function parameters and returns
+- Follow PEP 8 guidelines, enforced by [Ruff](https://docs.astral.sh/ruff/)
+  (configuration lives in `pyproject.toml`):
+  ```bash
+  ruff check .            # lint (includes import sorting)
+  ruff format --check .   # formatting
+  ```
+  Both run in CI; `ruff check --fix .` and `ruff format .` apply fixes.
+- Use type hints for all function parameters and returns (checked with mypy)
 - Include docstrings in NumPy format
 - Keep functions focused and modular
 - Add comments only for non-obvious behavior
