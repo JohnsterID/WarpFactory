@@ -1,10 +1,12 @@
 """Test advanced PyTorch features."""
 
 import pytest
-import torch
 import numpy as np
 import time
 from typing import Dict, List
+
+torch = pytest.importorskip(
+    "torch", reason="torch is not installed. Install the [torch] extra.")
 
 from warpfactory.torch import (
     TorchMetricBatch,

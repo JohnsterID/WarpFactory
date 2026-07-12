@@ -5,7 +5,6 @@ import sys
 
 import pytest
 import numpy as np
-import torch
 from warpfactory.physics import (
     TidalForces,
     CausalStructure,
@@ -185,6 +184,7 @@ def test_physics_imports_without_torch():
 @pytest.mark.gpu
 def test_gpu_quantum_effects():
     """Test GPU-accelerated quantum calculations."""
+    torch = pytest.importorskip("torch", reason="torch is not installed")
     if not torch.cuda.is_available():
         pytest.skip("CUDA not available")
     

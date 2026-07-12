@@ -2,7 +2,6 @@
 
 import pytest
 import numpy as np
-import torch
 from warpfactory.spacetime import (
     GeodesicSolver,
     HorizonFinder,

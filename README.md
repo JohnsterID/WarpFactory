@@ -71,7 +71,14 @@ A Python port of [WarpFactory](https://github.com/NerdsWithAttitudes/WarpFactory
 # Install from source (not yet published on PyPI)
 git clone https://github.com/JohnsterID/WarpFactory.git
 cd WarpFactory
+
+# Core install: numpy/scipy/matplotlib pipeline only
 pip install .
+
+# Optional extras (can be combined):
+pip install ".[torch]"      # PyTorch backend (GPU acceleration)
+pip install ".[gui]"        # PyQt6 desktop metric explorer
+pip install ".[torch,gui]"  # everything
 ```
 
 ### Using poetry (recommended)
@@ -82,7 +89,8 @@ pip install poetry
 # Install dependencies and package
 git clone https://github.com/JohnsterID/WarpFactory.git
 cd WarpFactory
-poetry install
+poetry install                        # core only
+poetry install --extras "torch gui"   # with optional backends
 ```
 
 ### Requirements
@@ -91,9 +99,9 @@ poetry install
 - Python 3.9 or higher
 - NumPy
 - SciPy
-- PyTorch (optional, for GPU acceleration)
 - Matplotlib (for visualization)
-- PyQt6 (for GUI)
+- PyTorch (optional `[torch]` extra, for GPU acceleration)
+- PyQt6 (optional `[gui]` extra, for the desktop metric explorer)
 
 #### System Dependencies
 For the GUI components, you need Qt6 system libraries:
@@ -226,8 +234,10 @@ poetry run pytest warpfactory/tests/test_gui.py -v
 
 ### Test Environment
 - Core functionality tests can run in any environment
-- GUI tests require Qt6 system libraries (see System Dependencies)
-- For CI/CD, use the provided Docker configuration
+- Tests for the optional backends skip automatically when the extra is
+  not installed: GUI tests need the `[gui]` extra plus Qt6 system
+  libraries (see System Dependencies), PyTorch tests need the `[torch]`
+  extra, and CUDA-only tests additionally need a GPU
 - For local development without GUI, use `pytest -m "not gui"`
 
 ### Test Coverage

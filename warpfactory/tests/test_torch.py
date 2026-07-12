@@ -2,7 +2,9 @@
 
 import pytest
 import numpy as np
-import torch
+
+torch = pytest.importorskip(
+    "torch", reason="torch is not installed. Install the [torch] extra.")
 
 from warpfactory.torch import (
     TorchMetricSolver,

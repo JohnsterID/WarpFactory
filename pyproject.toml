@@ -14,10 +14,17 @@ include = ["warpfactory/py.typed"]
 python = "^3.9"
 numpy = "^1.26.4"
 scipy = "^1.12.0"
-torch = "^2.2.1"
 matplotlib = "^3.8.3"
-PyQt6 = "^6.6.1"
-PyQt6-Qt6 = "^6.6.1"
+# Optional heavy backends: the core numpy/scipy pipeline must work
+# without them (warpfactory.torch and warpfactory.gui are the only
+# consumers, both import-guarded or self-contained subpackages).
+torch = { version = "^2.2.1", optional = true }
+PyQt6 = { version = "^6.6.1", optional = true }
+PyQt6-Qt6 = { version = "^6.6.1", optional = true }
+
+[tool.poetry.extras]
+torch = ["torch"]
+gui = ["PyQt6", "PyQt6-Qt6"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
