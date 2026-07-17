@@ -188,6 +188,52 @@ The affine normalization is dt/dlambda = 1 at launch; rescaling
 multiplies the integral by a positive constant, so the sign of the
 verdict is normalization-independent.
 
+## Exact curvature and off-axis ANEC (hyper-dual autodiff)
+
+Extension beyond the MATLAB original. For metrics available as
+analytic functions of the coordinates, hyper-dual numbers (forward-mode
+automatic differentiation, Fike & Alonso AIAA 2011-886) propagate exact
+first and second metric derivatives through the metric function in pure
+numpy -- machine-precision curvature with no stencil truncation error
+and no new dependency:
+
+```python
+from warpfactory.grid import (
+    ExactGridSolver,
+    ExactNullGeodesicANEC,
+    alcubierre_metric_fn,
+)
+
+solver = ExactGridSolver(alcubierre_metric_fn(v=0.5, R=2.0, sigma=4.0))
+
+# Exact stress-energy at arbitrary points (no grid needed)
+T = solver.stress_energy_at(0.0, 2.0, 1.0, 0.0)
+
+# Or on a uniform grid, matching GridSolver.solve conventions
+T_grid = solver.solve((1, 64, 64, 64), (0.0, 7.875, 7.875, 7.875),
+                      grid_scale=(1, 0.25, 0.25, 0.25))
+```
+
+Because exact Christoffel symbols are available at arbitrary points,
+ANEC rays no longer have to run down the x axis. The head-on Alcubierre
+on-axis null contraction is analytically zero, so the violation lives
+entirely off axis -- exactly where the 1-D evaluator cannot look:
+
+```python
+anec = ExactNullGeodesicANEC(solver)
+result = anec.integrate(
+    start=(0.0, -8.0, 1.0, 0.0),        # impact parameter y = 1
+    spatial_direction=(1.0, 0.0, 0.0),
+    comoving_velocity=0.5,              # bubble center xs = v t
+)
+result["anec"]           # negative = ANEC violated along this ray
+result["null_residual"]  # max |g_ab k^a k^b|, solution-quality check
+```
+
+The FD `GridSolver` remains the right tool for metrics that exist only
+as sampled data (TOV-built warp shells, piecewise profiles); autodiff
+of non-smooth metrics is not meaningful in any backend.
+
 ## Parameter search and optimization
 
 Wrap any metric builder into a searchable ansatz and minimize

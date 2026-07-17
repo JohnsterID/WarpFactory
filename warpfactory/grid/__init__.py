@@ -11,6 +11,12 @@ from .energy_conditions import (
     generate_uniform_field,
     get_energy_conditions,
 )
+from .exact import (
+    ExactGridSolver,
+    ExactNullGeodesicANEC,
+    alcubierre_metric_fn,
+    exact_metric_derivatives,
+)
 from .hawking_ellis import (
     HawkingEllisResult,
     hawking_ellis_classify,
@@ -18,6 +24,7 @@ from .hawking_ellis import (
     local_mixed_stress_energy,
     type_i_witnesses,
 )
+from .hyperdual import HyperDual
 from .interpolation import (
     legendre_radial_interp,
     quadrilinear_interp,
@@ -87,6 +94,11 @@ __all__ = [
     "stress_energy_to_si",
     "stress_energy_to_geometric",
     "get_energy_conditions",
+    "HyperDual",
+    "ExactGridSolver",
+    "ExactNullGeodesicANEC",
+    "alcubierre_metric_fn",
+    "exact_metric_derivatives",
     "HawkingEllisResult",
     "hawking_ellis_classify",
     "invariant_energy_conditions",

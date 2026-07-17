@@ -19,6 +19,69 @@ from ..solver.tensor_utils import inverse_tensor
 from .tensor import SpacetimeTensor, change_tensor_index, verify_tensor
 
 
+def christoffel_from_derivatives(g_inv: np.ndarray, dg: np.ndarray) -> np.ndarray:
+    """Gamma^a_bc = g^ad (d_b g_dc + d_c g_db - d_d g_bc) / 2.
+
+    dg has layout dg[k, mu, nu] = d_k g_munu. Shared by the
+    finite-difference grid solver and the exact (hyper-dual) pipeline,
+    so the Christoffel algebra exists in exactly one place.
+    """
+    symmetrized = dg + np.swapaxes(dg, 0, 2) - np.swapaxes(dg, 0, 1)
+    return 0.5 * np.einsum("ad...,bdc...->abc...", g_inv, symmetrized)
+
+
+def ricci_from_derivatives(
+    g: np.ndarray, g_inv: np.ndarray, dg: np.ndarray, d2g: np.ndarray
+) -> np.ndarray:
+    """Ricci tensor R_bc from metric derivatives.
+
+    R_bc = d_a Gamma^a_bc - d_c Gamma^a_ba
+           + Gamma^a_ae Gamma^e_bc - Gamma^a_ce Gamma^e_ba
+
+    The Christoffel derivatives are expanded analytically in the metric
+    derivatives (using d_e g^ad = -g^am g^dn d_e g_mn), so the caller
+    supplies only dg[k, mu, nu] = d_k g_munu and
+    d2g[k, n, mu, nu] = d_k d_n g_munu, whether those come from finite
+    differences or from exact automatic differentiation.
+    """
+    # S[b, d, c] = d_b g_dc + d_c g_db - d_d g_bc  (2 Gamma_dbc, all down)
+    S = dg + np.swapaxes(dg, 0, 2) - np.swapaxes(dg, 0, 1)
+    gamma = 0.5 * np.einsum("ad...,bdc...->abc...", g_inv, S)
+
+    # d_e g^ad = -g^am g^dn d_e g_mn
+    dg_inv = -np.einsum("am...,dn...,emn...->ead...", g_inv, g_inv, dg)
+
+    # dS[e, b, d, c] = d_e d_b g_dc + d_e d_c g_db - d_e d_d g_bc
+    dS = (
+        d2g
+        + np.swapaxes(d2g, 1, 3)  # d_e d_c g_db
+        - np.swapaxes(d2g, 1, 2)
+    )  # d_e d_d g_bc
+    dgamma = 0.5 * (
+        np.einsum("ead...,bdc...->eabc...", dg_inv, S)
+        + np.einsum("ad...,ebdc...->eabc...", g_inv, dS)
+    )
+
+    ricci = (
+        np.einsum("aabc...->bc...", dgamma)
+        - np.einsum("caba...->bc...", dgamma)
+        + np.einsum("aae...,ebc...->bc...", gamma, gamma)
+        - np.einsum("ace...,eba...->bc...", gamma, gamma)
+    )
+    # Symmetrize away round-off asymmetry.
+    return 0.5 * (ricci + np.swapaxes(ricci, 0, 1))
+
+
+def stress_energy_from_derivatives(
+    g: np.ndarray, g_inv: np.ndarray, dg: np.ndarray, d2g: np.ndarray
+) -> np.ndarray:
+    """Covariant T_munu from metric derivatives via the EFE, G = c = 1."""
+    ricci = ricci_from_derivatives(g, g_inv, dg, d2g)
+    ricci_scalar = np.einsum("ij...,ij...->...", g_inv, ricci)
+    einstein = ricci - 0.5 * ricci_scalar * g
+    return einstein / (8.0 * np.pi)
+
+
 class GridSolver:
     """Einstein field equation solver for metrics on 4-D grids.
 
@@ -74,56 +137,24 @@ class GridSolver:
         return d2g
 
     def christoffel(self, g_inv: np.ndarray, dg: np.ndarray) -> np.ndarray:
-        """Gamma^a_bc = g^ad (d_b g_dc + d_c g_db - d_d g_bc) / 2.
+        """Gamma^a_bc from metric first derivatives (shared algebra).
 
         dg is the first-derivative array from metric_derivative1 with
         layout dg[k, mu, nu] = d_k g_munu.
         """
-        # Build S[b, d, c] = d_b g_dc + d_c g_db - d_d g_bc from dg.
-        symmetrized = dg + np.swapaxes(dg, 0, 2) - np.swapaxes(dg, 0, 1)
-        return 0.5 * np.einsum("ad...,bdc...->abc...", g_inv, symmetrized)
+        return christoffel_from_derivatives(g_inv, dg)
 
     def ricci_tensor(self, g: np.ndarray, g_inv: np.ndarray, scaling) -> np.ndarray:
         """Ricci tensor R_bc on the grid.
 
-        R_bc = d_a Gamma^a_bc - d_c Gamma^a_ba
-               + Gamma^a_ae Gamma^e_bc - Gamma^a_ce Gamma^e_ba
-
-        The Christoffel derivatives are expanded analytically in the
-        metric derivatives (using d_e g^ad = -g^am g^dn d_e g_mn), so a
-        single finite-difference pass on the metric supplies everything;
-        this matches the accuracy of the MATLAB ricciT.m direct
-        expansion and avoids differentiating FD output.
+        A single finite-difference pass on the metric supplies the
+        derivatives; the curvature algebra lives in
+        ricci_from_derivatives. This matches the accuracy of the MATLAB
+        ricciT.m direct expansion and avoids differentiating FD output.
         """
         dg = self.metric_derivative1(g, scaling)
         d2g = self.metric_derivative2(g, scaling)
-
-        # S[b, d, c] = d_b g_dc + d_c g_db - d_d g_bc  (2 Gamma_dbc, all down)
-        S = dg + np.swapaxes(dg, 0, 2) - np.swapaxes(dg, 0, 1)
-        gamma = 0.5 * np.einsum("ad...,bdc...->abc...", g_inv, S)
-
-        # d_e g^ad = -g^am g^dn d_e g_mn
-        dg_inv = -np.einsum("am...,dn...,emn...->ead...", g_inv, g_inv, dg)
-
-        # dS[e, b, d, c] = d_e d_b g_dc + d_e d_c g_db - d_e d_d g_bc
-        dS = (
-            d2g
-            + np.swapaxes(d2g, 1, 3)  # d_e d_c g_db
-            - np.swapaxes(d2g, 1, 2)
-        )  # d_e d_d g_bc
-        dgamma = 0.5 * (
-            np.einsum("ead...,bdc...->eabc...", dg_inv, S)
-            + np.einsum("ad...,ebdc...->eabc...", g_inv, dS)
-        )
-
-        ricci = (
-            np.einsum("aabc...->bc...", dgamma)
-            - np.einsum("caba...->bc...", dgamma)
-            + np.einsum("aae...,ebc...->bc...", gamma, gamma)
-            - np.einsum("ace...,eba...->bc...", gamma, gamma)
-        )
-        # Symmetrize away FD round-off asymmetry.
-        return 0.5 * (ricci + np.swapaxes(ricci, 0, 1))
+        return ricci_from_derivatives(g, g_inv, dg, d2g)
 
     def solve(
         self, metric: SpacetimeTensor, contravariant: bool = True
@@ -152,11 +183,9 @@ class GridSolver:
         g = np.asarray(metric.tensor, dtype=float)
         g_inv = inverse_tensor(g)
 
-        ricci = self.ricci_tensor(g, g_inv, metric.scaling)
-        ricci_scalar = np.einsum("ij...,ij...->...", g_inv, ricci)
-
-        einstein = ricci - 0.5 * ricci_scalar * g
-        stress_energy = einstein / (8.0 * np.pi)
+        dg = self.metric_derivative1(g, metric.scaling)
+        d2g = self.metric_derivative2(g, metric.scaling)
+        stress_energy = stress_energy_from_derivatives(g, g_inv, dg, d2g)
         index = "covariant"
 
         if contravariant:

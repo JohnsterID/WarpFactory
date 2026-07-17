@@ -26,13 +26,17 @@ parameters. Regenerate with `python examples/alcubierre_energy_conditions.py`.*
   Warp Shell, Schwarzschild, Minkowski, and custom metrics
 - **Einstein field equation solver:** 2nd/4th-order finite differences
   to the stress-energy tensor, validated against analytic solutions
-  and the published WarpFactory paper figures (to 2%)
+  and the published WarpFactory paper figures (to 2%); plus an exact
+  curvature pipeline for analytic metric functions via hyper-dual
+  automatic differentiation (machine-precision derivatives, no stencil
+  truncation error, no extra dependencies)
 - **Energy conditions:** Null/Weak/Dominant/Strong violation maps by
   observer sampling in the local Eulerian frame, plus
   observer-independent all-observer margins via Hawking-Ellis
   classification of the stress-energy eigenstructure, closed-form
   worst-observer witnesses, and the averaged null energy condition
-  (ANEC) along null geodesics
+  (ANEC) along axial rays of 1-D slices or arbitrary off-axis null
+  geodesics of analytic metrics
 - **Analysis:** curvature invariants, kinematic scalars, geodesics,
   horizons, singularities, lensing, tidal forces, Ford-Roman quantum
   inequality bounds

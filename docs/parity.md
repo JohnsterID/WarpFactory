@@ -97,6 +97,20 @@ the ported surface stays recognizable:
   `warpfactory.physics`): the ANEC integral along axial null geodesics
   of the 1-D sampled metric, with the affine scale recovered from the
   conserved Killing energy of the stationary slice.
+- Exact curvature via hyper-dual automatic differentiation
+  (`HyperDual`, `ExactGridSolver`, `exact_metric_derivatives`): for
+  metrics available as analytic functions of the coordinates, the
+  metric derivatives are propagated exactly (to machine precision)
+  through the metric function, removing the finite-difference stencil
+  truncation error entirely. The curvature algebra is shared with the
+  FD `GridSolver`, so the two pipelines differ only in the derivative
+  source. The FD solver remains the tool for metrics that exist only
+  as sampled data (TOV-built warp shells, piecewise profiles).
+- Off-axis ANEC (`ExactNullGeodesicANEC`): the full affinely
+  parametrized null geodesic equation integrated with exact pointwise
+  Christoffel symbols, so ANEC rays with nonzero impact parameter --
+  unreachable from the 1-D slice API -- are evaluated without any
+  grid interpolation.
 
 The older 1-D axial-slice API (`warpfactory.metrics`,
 `warpfactory.solver`) remains available and unchanged.
