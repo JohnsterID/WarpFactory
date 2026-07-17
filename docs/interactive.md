@@ -33,6 +33,17 @@ from warpfactory.interactive import JupyterExplorer
 JupyterExplorer().display()
 ```
 
+Sliders recompute on release by default, keeping the UI responsive
+(each recompute runs the full pipeline plus a redraw). Pass
+`continuous_update=True` for live per-tick updates, and use
+`set_parameters({...})` to move several sliders with a single
+recompute in scripted sweeps:
+
+```python
+explorer = JupyterExplorer(continuous_update=True)
+explorer.set_parameters({"v_s": 4.0, "sigma": 2.0})
+```
+
 ## Scripting the same pipeline
 
 The explorer is a thin front end over `ExplorerModel`, which you can

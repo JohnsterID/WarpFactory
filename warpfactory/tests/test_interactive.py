@@ -165,3 +165,34 @@ class TestJupyterExplorer:
         controls = tree.children[0]
         assert explorer.metric_selector in controls.children
         assert explorer.parameter_box in controls.children
+
+    def test_sliders_recompute_on_release_by_default(self):
+        # Per-drag-tick recomputes queue full pipeline+redraw runs in
+        # the kernel and make the UI lag; sliders must default to
+        # recompute-on-release.
+        explorer = JupyterExplorer()
+        assert all(
+            not slider.continuous_update for slider in explorer._sliders.values()
+        )
+        eager = JupyterExplorer(continuous_update=True)
+        assert all(slider.continuous_update for slider in eager._sliders.values())
+        # The setting must survive a metric switch (sliders rebuild).
+        explorer.metric_selector.value = "Van Den Broeck"
+        assert all(
+            not slider.continuous_update for slider in explorer._sliders.values()
+        )
+
+    def test_set_parameters_batches_into_one_recompute(self):
+        explorer = JupyterExplorer()
+        recomputes = []
+        original = explorer.model.evaluate
+
+        def counting_evaluate(*args, **kwargs):
+            recomputes.append(1)
+            return original(*args, **kwargs)
+
+        explorer.model.evaluate = counting_evaluate
+        result = explorer.set_parameters({"v_s": 4.0, "R": 2.0, "sigma": 1.0})
+        assert len(recomputes) == 1
+        assert result.params == {"v_s": 4.0, "R": 2.0, "sigma": 1.0}
+        assert explorer.get_parameters() == {"v_s": 4.0, "R": 2.0, "sigma": 1.0}

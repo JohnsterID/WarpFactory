@@ -48,12 +48,26 @@ class JupyterExplorer:
         Spatial sampling line; defaults to the model's [-8, 8] line
     colormap : str
         Name of a warpfactory colormap for the line plots
+    continuous_update : bool
+        Recompute on every slider drag tick when True. The default
+        (False) recomputes on slider release only: each recompute runs
+        the full metric -> stress-energy -> diagnostics pipeline plus a
+        matplotlib redraw (~0.1 s), and a drag emits dozens of ticks,
+        so per-tick recomputes queue in the kernel and the UI lags
+        behind the mouse.
     """
 
-    def __init__(self, x: Optional[np.ndarray] = None, colormap: str = "redblue"):
+    def __init__(
+        self,
+        x: Optional[np.ndarray] = None,
+        colormap: str = "redblue",
+        continuous_update: bool = False,
+    ):
         self.model = ExplorerModel(x=x)
         self.colormap = ColorMaps().get(colormap)
+        self.continuous_update = continuous_update
         self.result: Optional[ExplorationResult] = None
+        self._updates_held = False
 
         self.metric_selector = widgets.Dropdown(
             options=list(METRIC_CATALOG), description="Metric"
@@ -85,7 +99,12 @@ class JupyterExplorer:
         for name, value in params.items():
             lo, hi, step = _PARAM_RANGES.get(name, _DEFAULT_RANGE)
             slider = widgets.FloatSlider(
-                value=value, min=lo, max=hi, step=step, description=name
+                value=value,
+                min=lo,
+                max=hi,
+                step=step,
+                description=name,
+                continuous_update=self.continuous_update,
             )
             slider.observe(self._on_control_changed, names="value")
             self._sliders[name] = slider
@@ -97,7 +116,8 @@ class JupyterExplorer:
         self.recompute()
 
     def _on_control_changed(self, change: dict) -> None:
-        self.recompute()
+        if not self._updates_held:
+            self.recompute()
 
     def get_parameters(self) -> Dict[str, float]:
         """Current slider values keyed by parameter name."""
@@ -107,10 +127,28 @@ class JupyterExplorer:
         """Programmatically move a slider (triggers a recompute)."""
         self._sliders[name].value = value
 
+    def set_parameters(self, params: Dict[str, float]) -> ExplorationResult:
+        """Move several sliders with a single recompute at the end.
+
+        Assigning slider values one by one fires one observer event
+        (full pipeline + redraw) per slider; batching them keeps
+        programmatic sweeps responsive.
+        """
+        self._updates_held = True
+        try:
+            for name, value in params.items():
+                self._sliders[name].value = value
+        finally:
+            self._updates_held = False
+        return self.recompute()
+
     # -- pipeline ------------------------------------------------------
 
     def recompute(self) -> ExplorationResult:
         """Re-run the pipeline for the current controls and redraw."""
+        # Visible immediately in a live front end; the final status
+        # overwrites it below.
+        self.status.value = "<i>computing...</i>"
         self.result = self.model.evaluate(
             self.metric_selector.value,
             self.get_parameters(),
