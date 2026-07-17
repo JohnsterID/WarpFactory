@@ -63,6 +63,20 @@ class HawkingEllisResult:
     rho_index : np.ndarray
         Column index of the most timelike eigenvector (the one whose
         eigenvalue is -rho); shape grid_shape
+    jordan_parameter : np.ndarray
+        Jordan-block parameter f of the canonical Type II form
+        (Martin-Moruno & Visser eq 2.15) at Type II points, 0
+        elsewhere. Extracted as T_ab l^a l^b / 4 with l the null
+        vector complementary to the degenerate null eigenvector k
+        (k^0 = l^0 = 1 normalization). Its sign is boost-invariant
+        and enters every Type II energy condition: f < 0 violates
+        them all even when the eigenvalue margins vanish
+        (e.g. negative-energy null dust)
+    nilpotent_magnitude : np.ndarray
+        Frobenius norm of T^a_b - lambda I at Type III points, 0
+        elsewhere; the severity scale of the unconditional Type III
+        violation (the cubic nilpotent piece violates every pointwise
+        energy condition)
     """
 
     type_map: np.ndarray
@@ -72,6 +86,8 @@ class HawkingEllisResult:
     complex_magnitude: np.ndarray
     eigenvectors: np.ndarray
     rho_index: np.ndarray
+    jordan_parameter: np.ndarray
+    nilpotent_magnitude: np.ndarray
 
 
 def local_mixed_stress_energy(
@@ -109,6 +125,39 @@ def _has_cubic_jordan_block(
 
     squared = shifted @ shifted
     return rank(squared) > rank(squared @ shifted)
+
+
+def _jordan_block_parameter(matrices: np.ndarray, null_vecs: np.ndarray) -> np.ndarray:
+    """Jordan-block parameter f of the canonical Type II form.
+
+    In the canonical frame (Martin-Moruno & Visser eq 2.15) the Type II
+    stress-energy is T^ab = f k^a k^b + Type-I diagonal with k = e_0 +
+    e_1 the degenerate null eigenvector; contracting the covariant
+    tensor with the complementary null vector l = e_0 - e_1 isolates f
+    as T_ab l^a l^b / 4 because eta(k, l) = -2 kills every other term.
+
+    Parameters
+    ----------
+    matrices : np.ndarray
+        Mixed T^a_b in the local orthonormal frame, shape (n, 4, 4)
+    null_vecs : np.ndarray
+        Degenerate null eigenvectors, shape (n, 4), any normalization
+
+    Returns
+    -------
+    np.ndarray
+        f at every point, shape (n,)
+    """
+    k = null_vecs.copy()
+    time_component = k[:, 0]
+    safe = np.where(np.abs(time_component) < np.finfo(float).tiny, 1.0, time_component)
+    k = k / safe[:, np.newaxis]
+    l_vec = k.copy()
+    l_vec[:, 1:] *= -1.0
+
+    # T_ab = eta_ac T^c_b
+    T_cov = _ETA_DIAG[np.newaxis, :, np.newaxis] * matrices
+    return np.einsum("na,nab,nb->n", l_vec, T_cov, l_vec) / 4.0
 
 
 def hawking_ellis_classify(
@@ -176,13 +225,27 @@ def hawking_ellis_classify(
     type_flat = np.ones(num_points, dtype=int)
     degenerate = ~is_type_iv & ~has_timelike
     type_flat[degenerate] = 2
+    nilpotent_flat = np.zeros(num_points)
     if np.any(degenerate):
         deg_idx = np.flatnonzero(degenerate)
         cubic = _has_cubic_jordan_block(
             matrices[deg_idx], rho_flat[deg_idx] * -1.0, tolerance
         )
         type_flat[deg_idx[cubic]] = 3
+        cubic_idx = deg_idx[cubic]
+        shifted = matrices[cubic_idx] + rho_flat[cubic_idx][
+            :, np.newaxis, np.newaxis
+        ] * np.eye(4)
+        nilpotent_flat[cubic_idx] = np.linalg.norm(shifted, axis=(1, 2))
     type_flat[is_type_iv] = 4
+
+    jordan_flat = np.zeros(num_points)
+    type_ii_idx = np.flatnonzero(type_flat == 2)
+    if len(type_ii_idx) > 0:
+        jordan_flat[type_ii_idx] = _jordan_block_parameter(
+            matrices[type_ii_idx],
+            vec_real[type_ii_idx, :, rho_index[type_ii_idx]],
+        )
 
     complex_flat = np.where(is_type_iv, imag_mag, 0.0)
 
@@ -194,6 +257,8 @@ def hawking_ellis_classify(
         complex_magnitude=complex_flat.reshape(grid_shape),
         eigenvectors=np.moveaxis(eigenvectors, 0, 2).reshape((4, 4) + grid_shape),
         rho_index=rho_index.reshape(grid_shape),
+        jordan_parameter=jordan_flat.reshape(grid_shape),
+        nilpotent_magnitude=nilpotent_flat.reshape(grid_shape),
     )
 
 
@@ -216,8 +281,15 @@ def invariant_energy_conditions(
     - dominant: min_i(rho - |p_i|)
 
     Type IV points violate every condition unconditionally; their
-    margin is -|Im| of the complex pair as a severity scale. Type
-    II/III points use the Type I formulas on the degenerate spectrum.
+    margin is -|Im| of the complex pair as a severity scale. Type II
+    points apply the Type I formulas to the degenerate (Segre)
+    spectrum AND require the Jordan-block parameter f >= 0
+    (Martin-Moruno & Visser Sec 4.2: every Type II energy condition
+    demands it), so the margin is the minimum of the two -- a
+    negative-energy null dust with vanishing eigenvalues is correctly
+    flagged. Type III points violate every pointwise condition (the
+    cubic nilpotent piece must vanish for any of them to hold); their
+    margin is -|nilpotent| as a severity scale.
 
     Parameters
     ----------
@@ -260,6 +332,12 @@ def invariant_energy_conditions(
     else:  # dominant
         margin = np.min(rho[np.newaxis] - np.abs(pressures), axis=0)
 
+    type_ii = classification.type_map == 2
+    margin = np.where(
+        type_ii, np.minimum(margin, classification.jordan_parameter), margin
+    )
+    type_iii = classification.type_map == 3
+    margin = np.where(type_iii, -classification.nilpotent_magnitude, margin)
     type_iv = classification.type_map == 4
     return np.where(type_iv, -classification.complex_magnitude, margin)
 

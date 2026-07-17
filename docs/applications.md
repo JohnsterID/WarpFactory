@@ -118,9 +118,12 @@ Eulerian frame; a violation seen only by some boosted observer can
 slip through. The Hawking-Ellis classification instead works with the
 eigenstructure of the mixed stress-energy T^a_b, which is
 frame-independent: Type I points get exact all-observer margins in
-closed form, Type IV points (complex eigenvalue pair, no rest frame)
-violate every condition for every observer. It stays well-defined at
-superluminal warp speeds.
+closed form, Type II points additionally carry the Jordan-block
+parameter f (T = f k k + Type-I part; every Type II condition needs
+f >= 0, and a negative-amplitude null dust is invisible to the
+eigenvalues alone), and Type III/IV points violate every condition
+for every observer. It stays well-defined at superluminal warp
+speeds.
 
 ```python
 from warpfactory.grid import (
@@ -137,9 +140,10 @@ metric = alcubierre_metric(
 stress_energy = GridSolver(order=4).solve(metric)
 
 classification = hawking_ellis_classify(stress_energy, metric)
-classification.type_map        # Hawking-Ellis type (1-4) per point
-classification.rho             # eigenframe energy density
-classification.pressures       # principal pressures, shape (3,) + grid
+classification.type_map          # Hawking-Ellis type (1-4) per point
+classification.rho               # eigenframe energy density
+classification.pressures         # principal pressures, shape (3,) + grid
+classification.jordan_parameter  # Type II null-dust amplitude f
 
 # All-observer margin maps (negative = violated by some observer)
 nec = invariant_energy_conditions(

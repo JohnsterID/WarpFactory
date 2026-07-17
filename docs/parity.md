@@ -84,10 +84,13 @@ the ported surface stays recognizable:
   conditions (`hawking_ellis_classify`, `invariant_energy_conditions`):
   pointwise Type I-IV maps from the eigenstructure of the mixed
   stress-energy tensor in the local orthonormal frame, with exact
-  all-observer energy-condition margins at Type I points and
-  unconditional-violation detection at Type IV points. This
-  complements the Eulerian-sampled `get_energy_conditions`, which can
-  miss violations visible only to boosted observers.
+  all-observer energy-condition margins at Type I points,
+  Jordan-block-parameter extraction at Type II points (a
+  negative-amplitude null dust has vanishing eigenvalues and is
+  flagged only through this parameter), and unconditional-violation
+  detection at Type III/IV points. This complements the
+  Eulerian-sampled `get_energy_conditions`, which can miss violations
+  visible only to boosted observers.
 - Closed-form worst-observer witnesses (`type_i_witnesses`): at Type I
   points the null vector attaining the invariant null margin and the
   timelike observer measuring the invariant energy density follow

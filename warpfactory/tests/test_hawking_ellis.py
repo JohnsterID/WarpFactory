@@ -73,6 +73,35 @@ class TestCanonicalTypes:
         T4 = np.outer(k, m) + np.outer(m, k)
         result = hawking_ellis_classify(point_stress_energy(T4), flat_point)
         assert result.type_map.ravel()[0] == 3
+        # sqrt(4) entries of magnitude 1 in the shifted matrix
+        np.testing.assert_allclose(
+            result.nilpotent_magnitude.ravel()[0], 2.0, atol=1e-9
+        )
+
+    def test_jordan_parameter_recovers_null_dust_amplitude(self, flat_point):
+        # Canonical Type II form (Martin-Moruno & Visser eq 2.15):
+        # T^ab = f k^a k^b + diagonal Type I part; f must come back
+        # exactly, including its sign.
+        k = np.array([1.0, 1.0, 0.0, 0.0])
+        for f in (2.0, -2.0, 0.5):
+            dust = point_stress_energy(f * np.outer(k, k))
+            result = hawking_ellis_classify(dust, flat_point)
+            np.testing.assert_allclose(
+                result.jordan_parameter.ravel()[0], f, atol=1e-12
+            )
+        mu, p2, p3, f = 1.0, 0.3, 0.2, 0.7
+        T4 = (
+            f * np.outer(k, k)
+            + mu * np.diag([1.0, -1.0, 0.0, 0.0])
+            + np.diag([0.0, 0.0, p2, p3])
+        )
+        result = hawking_ellis_classify(point_stress_energy(T4), flat_point)
+        assert result.type_map.ravel()[0] == 2
+        np.testing.assert_allclose(result.jordan_parameter.ravel()[0], f, atol=1e-12)
+
+    def test_jordan_parameter_zero_off_type_ii(self, flat_point):
+        result = hawking_ellis_classify(perfect_fluid(1.0, 0.1), flat_point)
+        np.testing.assert_array_equal(result.jordan_parameter, 0.0)
 
     def test_pure_flux_is_type_iv(self, flat_point):
         flux = np.zeros((4, 4))
@@ -103,6 +132,30 @@ class TestInvariantMargins:
         for condition in ("Null", "Weak", "Dominant", "Strong"):
             margin = invariant_energy_conditions(tensor, flat_point, condition)
             np.testing.assert_allclose(margin.ravel(), -0.5, atol=1e-12)
+
+    def test_negative_null_dust_violates_via_jordan_parameter(self, flat_point):
+        # Eigenvalues of f k k are identically zero for any f, so the
+        # Segre-part margins alone would report 0 (satisfied); the
+        # Jordan parameter is what carries the violation for f < 0.
+        k = np.array([1.0, 1.0, 0.0, 0.0])
+        dust = point_stress_energy(-2.0 * np.outer(k, k))
+        for condition in ("Null", "Weak", "Dominant", "Strong"):
+            margin = invariant_energy_conditions(dust, flat_point, condition)
+            np.testing.assert_allclose(margin.ravel(), -2.0, atol=1e-12)
+
+    def test_positive_null_dust_satisfies_nec(self, flat_point):
+        k = np.array([1.0, 1.0, 0.0, 0.0])
+        dust = point_stress_energy(2.0 * np.outer(k, k))
+        margin = invariant_energy_conditions(dust, flat_point, "Null")
+        np.testing.assert_allclose(margin.ravel(), 0.0, atol=1e-12)
+
+    def test_type_iii_violates_every_condition(self, flat_point):
+        k = np.array([1.0, 1.0, 0.0, 0.0])
+        m = np.array([0.0, 0.0, 1.0, 0.0])
+        tensor = point_stress_energy(np.outer(k, m) + np.outer(m, k))
+        for condition in ("Null", "Weak", "Dominant", "Strong"):
+            margin = invariant_energy_conditions(tensor, flat_point, condition)
+            np.testing.assert_allclose(margin.ravel(), -2.0, atol=1e-9)
 
     def test_unknown_condition_raises(self, flat_point):
         with pytest.raises(ValueError):
