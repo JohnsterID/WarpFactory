@@ -16,6 +16,7 @@ from .hawking_ellis import (
     hawking_ellis_classify,
     invariant_energy_conditions,
     local_mixed_stress_energy,
+    type_i_witnesses,
 )
 from .interpolation import (
     legendre_radial_interp,
@@ -90,6 +91,7 @@ __all__ = [
     "hawking_ellis_classify",
     "invariant_energy_conditions",
     "local_mixed_stress_energy",
+    "type_i_witnesses",
     "do_frame_transfer",
     "eulerian_transformation_matrix",
     "generate_uniform_field",

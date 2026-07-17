@@ -30,7 +30,9 @@ parameters. Regenerate with `python examples/alcubierre_energy_conditions.py`.*
 - **Energy conditions:** Null/Weak/Dominant/Strong violation maps by
   observer sampling in the local Eulerian frame, plus
   observer-independent all-observer margins via Hawking-Ellis
-  classification of the stress-energy eigenstructure
+  classification of the stress-energy eigenstructure, closed-form
+  worst-observer witnesses, and the averaged null energy condition
+  (ANEC) along null geodesics
 - **Analysis:** curvature invariants, kinematic scalars, geodesics,
   horizons, singularities, lensing, tidal forces, Ford-Roman quantum
   inequality bounds

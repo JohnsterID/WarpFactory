@@ -88,6 +88,15 @@ the ported surface stays recognizable:
   unconditional-violation detection at Type IV points. This
   complements the Eulerian-sampled `get_energy_conditions`, which can
   miss violations visible only to boosted observers.
+- Closed-form worst-observer witnesses (`type_i_witnesses`): at Type I
+  points the null vector attaining the invariant null margin and the
+  timelike observer measuring the invariant energy density follow
+  directly from the eigenframe, in coordinate components, with no
+  optimizer involved.
+- Averaged null energy condition (`AveragedNullEnergy` in
+  `warpfactory.physics`): the ANEC integral along axial null geodesics
+  of the 1-D sampled metric, with the affine scale recovered from the
+  conserved Killing energy of the stationary slice.
 
 The older 1-D axial-slice API (`warpfactory.metrics`,
 `warpfactory.solver`) remains available and unchanged.

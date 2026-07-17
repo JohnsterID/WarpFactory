@@ -14,11 +14,13 @@ from warpfactory.grid import (
     GridSolver,
     SpacetimeTensor,
     alcubierre_metric,
+    change_tensor_index,
     get_energy_conditions,
     hawking_ellis_classify,
     invariant_energy_conditions,
     local_mixed_stress_energy,
     minkowski_metric,
+    type_i_witnesses,
 )
 
 ETA_INV = np.diag([-1.0, 1.0, 1.0, 1.0])
@@ -186,3 +188,67 @@ class TestAlcubierreGrid:
             T, metric, "Weak", classification=classification
         )
         np.testing.assert_allclose(reused, direct)
+
+
+class TestTypeIWitnesses:
+    def test_witness_attains_margin_flat(self, flat_point):
+        # Anisotropic NEC-violating fluid: worst null direction is the
+        # p = -2 axis, T(k, k) = rho + p_min = -1 exactly.
+        T4 = np.diag([1.0, -2.0, 0.5, 0.5])
+        tensor = point_stress_energy(T4)
+        classification = hawking_ellis_classify(tensor, flat_point)
+        observer, null_witness = type_i_witnesses(classification, flat_point)
+        u = observer[:, 0, 0, 0, 0]
+        k = null_witness[:, 0, 0, 0, 0]
+        eta = np.diag([-1.0, 1.0, 1.0, 1.0])
+        T_cov = eta @ T4 @ eta
+        assert abs(k @ eta @ k) < 1e-12
+        np.testing.assert_allclose(u @ eta @ u, -1.0, atol=1e-12)
+        np.testing.assert_allclose(k @ T_cov @ k, -1.0, atol=1e-12)
+        np.testing.assert_allclose(u @ T_cov @ u, 1.0, atol=1e-12)
+
+    def test_witness_boost_invariant_value(self, flat_point):
+        # The attained contraction is a scalar: identical for the
+        # boosted fluid even though the witness components differ.
+        eta = np.diag([-1.0, 1.0, 1.0, 1.0])
+        T4 = np.diag([1.0, -2.0, 0.5, 0.5])
+        v = 0.6
+        gamma = 1.0 / np.sqrt(1.0 - v**2)
+        boost = np.eye(4)
+        boost[0, 0] = boost[2, 2] = gamma
+        boost[0, 2] = boost[2, 0] = gamma * v
+        T4b = boost @ T4 @ boost.T
+        tensor = point_stress_energy(T4b)
+        classification = hawking_ellis_classify(tensor, flat_point)
+        _, null_witness = type_i_witnesses(classification, flat_point)
+        k = null_witness[:, 0, 0, 0, 0]
+        T_cov = eta @ T4b @ eta
+        assert abs(k @ eta @ k) < 1e-12
+        np.testing.assert_allclose(k @ T_cov @ k, -1.0, atol=1e-10)
+
+    def test_alcubierre_witnesses_verify_on_grid(self, alcubierre_case):
+        # On the curved metric the witness must be null/timelike w.r.t.
+        # the FULL metric g and attain the invariant null margin at
+        # every Type I point; non-Type-I points must be NaN.
+        metric, T = alcubierre_case
+        classification = hawking_ellis_classify(T, metric)
+        observer, null_witness = type_i_witnesses(classification, metric)
+        T_cov = change_tensor_index(T, "covariant", metric).tensor
+        g = metric.tensor
+        type_i = classification.type_map == 1
+        assert type_i.any() and (~type_i).any()
+
+        k_norm = np.einsum("m...,mn...,n...->...", null_witness, g, null_witness)
+        u_norm = np.einsum("m...,mn...,n...->...", observer, g, observer)
+        contraction = np.einsum(
+            "m...,mn...,n...->...", null_witness, T_cov, null_witness
+        )
+        margin = invariant_energy_conditions(
+            T, metric, "Null", classification=classification
+        )
+        assert np.abs(k_norm[type_i]).max() < 1e-12
+        np.testing.assert_allclose(u_norm[type_i], -1.0, atol=1e-12)
+        np.testing.assert_allclose(contraction[type_i], margin[type_i], atol=1e-8)
+        assert (observer[0][type_i] > 0).all()
+        assert np.isnan(null_witness[0][~type_i]).all()
+        assert np.isnan(observer[0][~type_i]).all()

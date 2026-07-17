@@ -22,12 +22,16 @@ well-defined at all warp speeds, including superluminal bubbles.
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 
-from .energy_conditions import CONDITIONS, do_frame_transfer
-from .tensor import SpacetimeTensor
+from .energy_conditions import (
+    CONDITIONS,
+    do_frame_transfer,
+    eulerian_transformation_matrix,
+)
+from .tensor import SpacetimeTensor, change_tensor_index
 
 _ETA_DIAG = np.array([-1.0, 1.0, 1.0, 1.0])
 
@@ -52,6 +56,13 @@ class HawkingEllisResult:
     complex_magnitude : np.ndarray
         |Im| of the complex pair at Type IV points, 0 elsewhere; a
         severity scale for the unconditional Type IV violation
+    eigenvectors : np.ndarray
+        Eigenvector columns of T^a_b in the local orthonormal frame,
+        shape (4, 4) + grid_shape with [:, k] the k-th eigenvector;
+        consumed by type_i_witnesses
+    rho_index : np.ndarray
+        Column index of the most timelike eigenvector (the one whose
+        eigenvalue is -rho); shape grid_shape
     """
 
     type_map: np.ndarray
@@ -59,6 +70,8 @@ class HawkingEllisResult:
     pressures: np.ndarray
     eigenvalues: np.ndarray
     complex_magnitude: np.ndarray
+    eigenvectors: np.ndarray
+    rho_index: np.ndarray
 
 
 def local_mixed_stress_energy(
@@ -179,6 +192,8 @@ def hawking_ellis_classify(
         pressures=np.moveaxis(pressures_flat, 1, 0).reshape((3,) + grid_shape),
         eigenvalues=np.moveaxis(eigenvalues, 1, 0).reshape((4,) + grid_shape),
         complex_magnitude=complex_flat.reshape(grid_shape),
+        eigenvectors=np.moveaxis(eigenvectors, 0, 2).reshape((4, 4) + grid_shape),
+        rho_index=rho_index.reshape(grid_shape),
     )
 
 
@@ -247,3 +262,97 @@ def invariant_energy_conditions(
 
     type_iv = classification.type_map == 4
     return np.where(type_iv, -classification.complex_magnitude, margin)
+
+
+def type_i_witnesses(
+    classification: HawkingEllisResult, metric: SpacetimeTensor
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Closed-form worst observers at Type I points, in coordinates.
+
+    At a Type I point the eigenframe is an orthonormal tetrad
+    {e_0, e_1, e_2, e_3} and the null contraction for
+    k = e_0 + sum_i c_i e_i (sum c_i^2 = 1) is rho + sum_i c_i^2 p_i,
+    minimized by putting all weight on the smallest pressure. The
+    worst null direction is therefore k = e_0 + e_min in closed form,
+    and T_ab k^a k^b = rho + p_min reproduces the invariant null
+    margin exactly. Local-frame vectors map to coordinates with the
+    Eulerian transformation M (v_coord = M v_local, since
+    M^T g M = eta).
+
+    Parameters
+    ----------
+    classification : HawkingEllisResult
+        Output of hawking_ellis_classify (its eigenvectors are reused;
+        no second eigensolve happens here)
+    metric : SpacetimeTensor
+        Metric the classification was computed against
+
+    Returns
+    -------
+    observer : np.ndarray
+        Future-directed unit timelike eigenframe observer u^a in
+        coordinate components, shape (4,) + grid_shape; the observer
+        measuring the invariant energy density rho
+    null_witness : np.ndarray
+        Null vector k^a in coordinate components attaining the
+        invariant null margin, shape (4,) + grid_shape
+
+    Both are NaN at non-Type-I points, where no timelike eigenvector
+    (and hence no closed-form witness) exists.
+    """
+    grid_shape = classification.type_map.shape
+    num_points = int(np.prod(grid_shape))
+
+    eigenvectors = classification.eigenvectors.real.reshape(4, 4, num_points)
+    rho_index = classification.rho_index.reshape(num_points)
+    pressures = classification.pressures.reshape(3, num_points)
+
+    point_index = np.arange(num_points)
+    e_time = eigenvectors[:, rho_index, point_index]
+
+    # Unit-normalize in eta and orient future (positive local t
+    # component; M preserves time orientation since M[0,0] > 0).
+    time_norm2 = -np.einsum("m,mk->k", _ETA_DIAG, e_time**2)
+    e_time = e_time / np.sqrt(np.abs(time_norm2))
+    e_time = e_time * np.sign(e_time[0])
+
+    spatial_columns = np.empty((4, 3, num_points))
+    keep = np.ones((num_points, 4), dtype=bool)
+    keep[point_index, rho_index] = False
+    for row in range(4):
+        spatial_columns[row] = eigenvectors[row].T[keep].reshape(num_points, 3).T
+    min_index = np.argmin(pressures, axis=0)
+    e_min = spatial_columns[:, min_index, point_index]
+    # eta-Gram-Schmidt against e_time: inside a degenerate eigenspace
+    # the returned vectors need not be eta-orthogonal, and the witness
+    # is only exactly null when eta(e_time, e_min) = 0.
+    overlap = np.einsum("m,mk,mk->k", _ETA_DIAG, e_time, e_min)
+    e_min = e_min + overlap * e_time
+    residual2 = np.abs(np.einsum("m,mk->k", _ETA_DIAG, e_min**2))
+    # Isotropic-within-noise points (e.g. numerical vacuum) annihilate
+    # under the projection; every null direction is equally worst there,
+    # so complete the tetrad with the projected local x axis instead.
+    degenerate_dir = residual2 < np.finfo(float).eps
+    if np.any(degenerate_dir):
+        axis = np.zeros((4, int(degenerate_dir.sum())))
+        axis[1] = 1.0
+        overlap = np.einsum("m,mk,mk->k", _ETA_DIAG, e_time[:, degenerate_dir], axis)
+        e_min[:, degenerate_dir] = axis + overlap * e_time[:, degenerate_dir]
+        residual2 = np.abs(np.einsum("m,mk->k", _ETA_DIAG, e_min**2))
+    e_min = e_min / np.sqrt(residual2)
+
+    g_cov = change_tensor_index(metric, "covariant")
+    M = eulerian_transformation_matrix(np.asarray(g_cov.tensor, dtype=float))
+    M_flat = M.reshape(4, 4, num_points)
+
+    observer = np.einsum("mnk,nk->mk", M_flat, e_time)
+    null_witness = np.einsum("mnk,nk->mk", M_flat, e_time + e_min)
+
+    not_type_i = (classification.type_map != 1).reshape(num_points)
+    observer[:, not_type_i] = np.nan
+    null_witness[:, not_type_i] = np.nan
+
+    return (
+        observer.reshape((4,) + grid_shape),
+        null_witness.reshape((4,) + grid_shape),
+    )

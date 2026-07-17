@@ -151,6 +151,43 @@ The Alcubierre bubble wall is Type IV dominated: no observer there
 measures a well-defined energy density, and every pointwise energy
 condition fails regardless of frame.
 
+At Type I points the worst observer is available in closed form from
+the same eigen-decomposition -- no optimizer involved:
+
+```python
+from warpfactory.grid import type_i_witnesses
+
+observer, null_witness = type_i_witnesses(classification, metric)
+# observer: u^a measuring the invariant rho (coordinate components)
+# null_witness: k^a attaining the invariant null margin exactly,
+#               NaN at non-Type-I points
+```
+
+## Averaged null energy condition (ANEC)
+
+Extension beyond the MATLAB original. Pointwise violations can be
+tolerated by quantum fields, but the averaged condition
+`integral T_ab k^a k^b dlambda >= 0` along a complete null geodesic is
+the sharper viability test. The evaluator integrates axial null rays
+through the 1-D sampled metric (affine scale recovered from the
+conserved Killing energy, as in the CMB hazard tracer):
+
+```python
+from warpfactory.physics import AveragedNullEnergy
+from warpfactory.solver import EnergyTensor
+
+stress_energy = EnergyTensor().calculate_from_metric(components, x)
+result = AveragedNullEnergy().integrate(
+    components, stress_energy, x_start=-4.5, direction=+1.0, x=x
+)
+result["anec"]       # negative = ANEC violated along this ray
+result["integrand"]  # A T_ab w^a w^b per unit coordinate time
+```
+
+The affine normalization is dt/dlambda = 1 at launch; rescaling
+multiplies the integral by a positive constant, so the sign of the
+verdict is normalization-independent.
+
 ## Parameter search and optimization
 
 Wrap any metric builder into a searchable ansatz and minimize
