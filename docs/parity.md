@@ -75,5 +75,19 @@ the MATLAB original:
   Minkowski for Strong/Dominant; that inconsistency is resolved here in
   favor of the local-frame convention.
 
+## Extensions beyond the original
+
+Capabilities with no MATLAB counterpart, kept in separate modules so
+the ported surface stays recognizable:
+
+- Hawking-Ellis classification and observer-independent energy
+  conditions (`hawking_ellis_classify`, `invariant_energy_conditions`):
+  pointwise Type I-IV maps from the eigenstructure of the mixed
+  stress-energy tensor in the local orthonormal frame, with exact
+  all-observer energy-condition margins at Type I points and
+  unconditional-violation detection at Type IV points. This
+  complements the Eulerian-sampled `get_energy_conditions`, which can
+  miss violations visible only to boosted observers.
+
 The older 1-D axial-slice API (`warpfactory.metrics`,
 `warpfactory.solver`) remains available and unchanged.

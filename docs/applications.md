@@ -110,6 +110,47 @@ metric = alcubierre_metric(
 expansion, shear, vorticity = get_scalars(metric)
 ```
 
+## Observer-independent energy conditions (Hawking-Ellis)
+
+Extension beyond the MATLAB original. `get_energy_conditions` samples
+the energy conditions for a family of observers built from the
+Eulerian frame; a violation seen only by some boosted observer can
+slip through. The Hawking-Ellis classification instead works with the
+eigenstructure of the mixed stress-energy T^a_b, which is
+frame-independent: Type I points get exact all-observer margins in
+closed form, Type IV points (complex eigenvalue pair, no rest frame)
+violate every condition for every observer. It stays well-defined at
+superluminal warp speeds.
+
+```python
+from warpfactory.grid import (
+    GridSolver,
+    alcubierre_metric,
+    hawking_ellis_classify,
+    invariant_energy_conditions,
+)
+
+metric = alcubierre_metric(
+    (1, 32, 32, 32), (0.0, 7.75, 7.75, 7.75),
+    v=2.0, R=3.0, sigma=2.0, grid_scale=(1, 0.5, 0.5, 0.5),
+)
+stress_energy = GridSolver(order=4).solve(metric)
+
+classification = hawking_ellis_classify(stress_energy, metric)
+classification.type_map        # Hawking-Ellis type (1-4) per point
+classification.rho             # eigenframe energy density
+classification.pressures       # principal pressures, shape (3,) + grid
+
+# All-observer margin maps (negative = violated by some observer)
+nec = invariant_energy_conditions(
+    stress_energy, metric, "Null", classification=classification
+)
+```
+
+The Alcubierre bubble wall is Type IV dominated: no observer there
+measures a well-defined energy density, and every pointwise energy
+condition fails regardless of frame.
+
 ## Parameter search and optimization
 
 Wrap any metric builder into a searchable ansatz and minimize

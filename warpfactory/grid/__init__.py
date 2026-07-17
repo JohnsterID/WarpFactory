@@ -11,6 +11,12 @@ from .energy_conditions import (
     generate_uniform_field,
     get_energy_conditions,
 )
+from .hawking_ellis import (
+    HawkingEllisResult,
+    hawking_ellis_classify,
+    invariant_energy_conditions,
+    local_mixed_stress_energy,
+)
 from .interpolation import (
     legendre_radial_interp,
     quadrilinear_interp,
@@ -80,6 +86,10 @@ __all__ = [
     "stress_energy_to_si",
     "stress_energy_to_geometric",
     "get_energy_conditions",
+    "HawkingEllisResult",
+    "hawking_ellis_classify",
+    "invariant_energy_conditions",
+    "local_mixed_stress_energy",
     "do_frame_transfer",
     "eulerian_transformation_matrix",
     "generate_uniform_field",
