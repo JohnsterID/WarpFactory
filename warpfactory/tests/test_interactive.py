@@ -184,15 +184,15 @@ class TestJupyterExplorer:
 
     def test_set_parameters_batches_into_one_recompute(self):
         explorer = JupyterExplorer()
-        recomputes = []
-        original = explorer.model.evaluate
-
-        def counting_evaluate(*args, **kwargs):
-            recomputes.append(1)
-            return original(*args, **kwargs)
-
-        explorer.model.evaluate = counting_evaluate
+        count_before = explorer.recompute_count
         result = explorer.set_parameters({"v_s": 4.0, "R": 2.0, "sigma": 1.0})
-        assert len(recomputes) == 1
+        assert explorer.recompute_count == count_before + 1
         assert result.params == {"v_s": 4.0, "R": 2.0, "sigma": 1.0}
         assert explorer.get_parameters() == {"v_s": 4.0, "R": 2.0, "sigma": 1.0}
+
+    def test_set_parameter_still_recomputes_each_call(self):
+        explorer = JupyterExplorer()
+        count_before = explorer.recompute_count
+        explorer.set_parameter("v_s", 3.0)
+        explorer.set_parameter("R", 2.0)
+        assert explorer.recompute_count == count_before + 2

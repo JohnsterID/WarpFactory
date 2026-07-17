@@ -67,6 +67,7 @@ class JupyterExplorer:
         self.colormap = ColorMaps().get(colormap)
         self.continuous_update = continuous_update
         self.result: Optional[ExplorationResult] = None
+        self.recompute_count = 0
         self._updates_held = False
 
         self.metric_selector = widgets.Dropdown(
@@ -146,6 +147,7 @@ class JupyterExplorer:
 
     def recompute(self) -> ExplorationResult:
         """Re-run the pipeline for the current controls and redraw."""
+        self.recompute_count += 1
         # Visible immediately in a live front end; the final status
         # overwrites it below.
         self.status.value = "<i>computing...</i>"
