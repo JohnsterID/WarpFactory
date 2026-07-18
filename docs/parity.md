@@ -127,6 +127,34 @@ the ported surface stays recognizable:
   The scalaron terms carry one extra level of finite-difference
   stencil error relative to the GR piece (the Ricci scalar map is
   itself FD output).
+- Brans-Dicke scalar-tensor gravity (`BransDickeSolver`): the
+  Jordan-frame field equations with an optional potential (Fujii &
+  Maeda eq. 2.6), for a user-supplied scalar field configuration on
+  the grid. Constant phi with V = 0 rescales the GR matter budget by
+  phi (the inverse effective gravitational constant); omega = 0 with
+  phi = F(R) and V = R F - f reproduces `FofRSolver` exactly, which
+  the tests use as a cross-solver consistency check.
+- Conformal trace anomaly (`ConformalTraceAnomaly` in
+  `warpfactory.physics`): the state-independent piece of the
+  renormalized quantum stress-energy, <T^mu_mu>_ren =
+  c C^2 - a E + xi Box R (Duff, hep-th/9308075), for a chosen
+  massless field content, on spherically symmetric metrics. Validated
+  against the published Schwarzschild M^2/(60 pi^2 r^6) and de Sitter
+  -H^4/(240 pi^2) closed forms for one conformal scalar. The
+  state-dependent traceless part of <T_munu>_ren (vacuum-state
+  choice, Boulware/Unruh/Hartle-Hawking) is out of scope.
+- ADM constraint residuals (`ADMConstraints`): the Hamiltonian and
+  momentum constraints of the 3+1 initial-value problem (Baumgarte &
+  Shapiro eqs. 2.132/2.133) evaluated on any grid metric slice
+  against any stress-energy source. With the slice's own EFE
+  stress-energy the Hamiltonian residual is round-off (both sides
+  come from one FD pass) and the momentum residual is pure
+  discretization error (converges under refinement); with a foreign
+  source (vacuum, modified gravity, analytic matter) a nonzero
+  residual proves the slice is not valid initial data for that
+  matter. Time evolution itself (BSSN/harmonic formulations,
+  constraint damping, gauge drivers) is deliberately out of scope --
+  that is Einstein Toolkit / GRChombo territory.
 
 The older 1-D axial-slice API (`warpfactory.metrics`,
 `warpfactory.solver`) remains available and unchanged.

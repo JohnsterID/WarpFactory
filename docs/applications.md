@@ -276,6 +276,82 @@ source `T_munu = Lambda g_munu / 8 pi` on flat space. The output is a
 regular stress-energy `SpacetimeTensor`, so the energy-condition and
 Hawking-Ellis machinery applies unchanged.
 
+`BransDickeSolver` extends the same contract to Jordan-frame
+scalar-tensor gravity: supply the metric plus a scalar field profile
+phi (and optionally a potential), get the demanded matter. Metric f(R)
+gravity is its omega = 0 member with phi = F(R) and V = R F - f:
+
+```python
+from warpfactory.grid import BransDickeSolver
+
+bd = BransDickeSolver(omega=100.0, order=4)
+T_bd = bd.solve(metric, phi=1.0)   # phi = 1, V = 0 -> the GR answer
+```
+
+## Semiclassical trace anomaly
+
+Extension beyond the MATLAB original. The conformal (trace) anomaly is
+the state-independent piece of the renormalized quantum stress-energy
+<T_munu>_ren: for massless conformally coupled fields the trace is a
+closed-form curvature expression c C^2 - a E + xi Box R (Duff,
+hep-th/9308075). Where it rivals the classical stress-energy scale,
+semiclassical backreaction cannot be ignored and the classical warp
+metric is not self-consistent:
+
+```python
+import numpy as np
+from warpfactory.physics import ConformalTraceAnomaly
+
+anomaly = ConformalTraceAnomaly(n_scalar=1)   # one conformal scalar
+
+M = 1.0
+r = np.linspace(3.0, 10.0, 141)
+theta = np.full_like(r, np.pi / 2)
+f = 1 - 2 * M / r
+metric = {"g_tt": -f, "g_rr": 1 / f,
+          "g_theta_theta": r**2, "g_phi_phi": r**2 * np.sin(theta)**2}
+coords = {"r": r, "theta": theta}
+
+trace = anomaly.trace(metric, coords)   # = M^2/(60 pi^2 r^6), published value
+ratio = anomaly.backreaction_ratio(metric, coords, classical_trace_scale)
+```
+
+The state-dependent traceless part of <T_munu>_ren (choice of
+Boulware/Unruh/Hartle-Hawking vacuum or their warp analogues) is a
+genuinely open research problem and deliberately not implemented.
+
+## ADM constraint residuals (initial-data validity)
+
+Extension beyond the MATLAB original. Any 3+1 evolution starts from
+initial data that must satisfy the Hamiltonian and momentum
+constraints; `ADMConstraints` evaluates both residuals for a grid
+metric slice against any matter source:
+
+```python
+from warpfactory.grid import ADMConstraints, GridSolver, alcubierre_metric
+
+metric = alcubierre_metric(
+    (1, 48, 48, 48), (0.0, 5.875, 5.875, 5.875),
+    v=0.5, R=2.0, sigma=2.0, grid_scale=(1, 0.25, 0.25, 0.25),
+)
+adm = ADMConstraints(order=4)
+
+# Against the slice's own EFE stress-energy: residuals are pure
+# discretization error (Hamiltonian closes to round-off).
+T = GridSolver(order=4).solve(metric)
+res = adm.evaluate(metric, T)
+res.hamiltonian, res.momentum
+
+# Against vacuum: the nonzero Hamiltonian residual equals
+# 16 pi rho_required -- the slice is not valid vacuum initial data.
+res_vac = adm.evaluate(metric)
+```
+
+This is the initial-data half of the dynamic-evolution problem. The
+evolution half (BSSN or generalized-harmonic reformulation, constraint
+damping, gauge drivers, AMR) is what the Einstein Toolkit and GRChombo
+exist for, and WarpFactory does not duplicate them.
+
 ## Parameter search and optimization
 
 Wrap any metric builder into a searchable ansatz and minimize

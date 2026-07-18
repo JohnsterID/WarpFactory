@@ -1,33 +1,44 @@
-"""Effective stress-energy in f(R) modified gravity on 4-D grids.
+"""Effective stress-energy in modified gravity theories on 4-D grids.
 
-Extension beyond the MATLAB original. In the metric formalism the f(R)
-field equations are (Sotiriou & Faraoni, arXiv:0805.1726, eq. 6, with
-G = c = 1)
+Extension beyond the MATLAB original: the metric-first pipeline
+generalized past the Einstein field equations. Given a metric (and,
+for scalar-tensor theories, a scalar field configuration), each solver
+returns the matter stress-energy the modified field equations demand.
+
+f(R) gravity (metric formalism; Sotiriou & Faraoni, arXiv:0805.1726,
+eq. 6, G = c = 1):
 
     F(R) R_munu - f(R)/2 g_munu
         + (g_munu Box - nabla_mu nabla_nu) F(R) = 8 pi T_munu
 
-where F = df/dR. Given a metric, the matter stress-energy required to
-source it therefore differs from the general-relativity answer by the
-scalaron terms: curvature gradients act as an effective geometric
-matter source. This lets the metric-first WarpFactory pipeline ask
-whether a warp metric's exotic-matter requirement changes in a
-modified-gravity theory (e.g. the Starobinsky R + alpha R^2 model)
-rather than in pure general relativity.
+where F = df/dR. Curvature gradients act as an effective geometric
+matter source, so a warp metric's exotic-matter requirement changes
+relative to general relativity (e.g. in the Starobinsky R + alpha R^2
+model). For f(R) = R this reduces exactly to the Einstein field
+equations, so FofRSolver(gr_model()) reproduces GridSolver to
+round-off.
 
-For f(R) = R this reduces exactly to the Einstein field equations, so
-FofRSolver(gr_model()) reproduces GridSolver to round-off.
+Brans-Dicke scalar-tensor gravity (Jordan frame, with potential;
+Fujii & Maeda, "The Scalar-Tensor Theory of Gravitation", eq. 2.6):
 
-Accuracy note: the Ricci scalar map is finite-differenced from the
-metric, and the scalaron Hessian nabla nabla F is finite-differenced
-from that map, so the scalaron terms carry one more level of stencil
-error than the GR piece. Interior points of smooth metrics converge at
-the stencil order; grid-boundary values inherit the one-sided-stencil
-noise of the base solver.
+    phi G_munu = 8 pi T_munu
+        + (omega/phi) (d_mu phi d_nu phi - g_munu (d phi)^2 / 2)
+        + (nabla_mu nabla_nu - g_munu Box) phi - g_munu V(phi)/2
+
+Metric f(R) gravity is the omega = 0 member of this family with
+phi = F(R) and V = R F - f, which the tests exploit as an exact
+cross-check between the two solvers.
+
+Accuracy note: scalar maps (the Ricci scalar in FofRSolver, the
+user-supplied phi in BransDickeSolver when it is FD-derived) are
+differentiated by finite differences, so the scalar-sector terms can
+carry one more level of stencil error than the GR piece. Interior
+points of smooth fields converge at the stencil order; grid-boundary
+values inherit the one-sided-stencil noise of the base solver.
 """
 
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Callable, Optional, Union
 
 import numpy as np
 
@@ -166,4 +177,112 @@ class FofRSolver:
             scaling=metric.scaling,
             name=metric.name,
             params=params,
+        )
+
+
+class BransDickeSolver:
+    """Effective matter stress-energy in Brans-Dicke scalar-tensor gravity.
+
+    Jordan-frame field equations with a potential (Fujii & Maeda,
+    eq. 2.6); given the metric AND a scalar field configuration phi on
+    the same grid, returns the matter T_munu the theory demands. The
+    scalar field is a user input, not solved for: the metric-first
+    workflow fixes the geometry and asks what sources are needed, and
+    phi is part of the source specification. phi = const with V = 0
+    rescales the GR answer by phi (the inverse effective gravitational
+    constant); metric f(R) gravity is recovered at omega = 0 with
+    phi = F(R) and V = R F - f.
+
+    Parameters
+    ----------
+    omega : float
+        Brans-Dicke coupling; omega -> infinity recovers general
+        relativity for regular phi profiles
+    order : int
+        Finite difference accuracy order, 2 or 4
+    """
+
+    def __init__(self, omega: float, order: int = 4):
+        self.omega = omega
+        self.grid_solver = GridSolver(order=order)
+        self.order = order
+
+    def solve(
+        self,
+        metric: SpacetimeTensor,
+        phi: Union[float, np.ndarray],
+        potential: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        contravariant: bool = True,
+    ) -> SpacetimeTensor:
+        """Matter stress-energy for a metric and scalar field profile.
+
+        Parameters
+        ----------
+        metric : SpacetimeTensor
+            Metric on a uniform 4-D grid
+        phi : float or np.ndarray
+            Scalar field: a constant or a grid-shaped array
+        potential : callable, optional
+            V(phi), mapping the phi array to a same-shaped array;
+            omitted means V = 0
+        contravariant : bool
+            Return T^munu when True, T_munu otherwise
+        """
+        if not verify_tensor(metric):
+            raise ValueError(
+                "Metric failed verification; see verify_tensor(metric, quiet=False)"
+            )
+        if metric.index.lower() != "covariant":
+            metric = change_tensor_index(metric, "covariant")
+
+        g = np.asarray(metric.tensor, dtype=float)
+        g_inv = inverse_tensor(g)
+        scaling = metric.scaling
+        grid_shape = metric.grid_shape
+
+        phi = np.broadcast_to(np.asarray(phi, dtype=float), grid_shape).copy()
+        if np.any(phi <= 0):
+            raise ValueError("phi must be positive (it is 1/G_eff)")
+
+        dg = self.grid_solver.metric_derivative1(g, scaling)
+        d2g = self.grid_solver.metric_derivative2(g, scaling)
+        ricci = ricci_from_derivatives(g, g_inv, dg, d2g)
+        ricci_scalar = np.einsum("mn...,mn...->...", g_inv, ricci)
+        einstein = ricci - 0.5 * ricci_scalar * g
+
+        gamma = christoffel_from_derivatives(g_inv, dg)
+        dphi = self.grid_solver.scalar_derivative1(phi, scaling)
+        d2phi = self.grid_solver.scalar_derivative2(phi, scaling)
+        hessian_phi = d2phi - np.einsum("amn...,a...->mn...", gamma, dphi)
+        box_phi = np.einsum("mn...,mn...->...", g_inv, hessian_phi)
+        # (d phi)^2 = g^ab d_a phi d_b phi
+        dphi_sq = np.einsum("ab...,a...,b...->...", g_inv, dphi, dphi)
+
+        kinetic = (
+            self.omega
+            / phi
+            * (np.einsum("m...,n...->mn...", dphi, dphi) - 0.5 * g * dphi_sq)
+        )
+        stress_energy = phi * einstein - kinetic - hessian_phi + g * box_phi
+        if potential is not None:
+            stress_energy = stress_energy + 0.5 * g * np.asarray(
+                potential(phi), dtype=float
+            )
+        stress_energy = stress_energy / (8.0 * np.pi)
+        index = "covariant"
+
+        if contravariant:
+            stress_energy = np.einsum(
+                "ab...,ai...,bj...->ij...", stress_energy, g_inv, g_inv
+            )
+            index = "contravariant"
+
+        return SpacetimeTensor(
+            tensor=stress_energy,
+            type="stress-energy",
+            index=index,
+            coords=metric.coords,
+            scaling=metric.scaling,
+            name=metric.name,
+            params={"order": self.order, "omega": self.omega},
         )

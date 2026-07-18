@@ -1,8 +1,10 @@
-"""Tests for the f(R) effective stress-energy solver."""
+"""Tests for the modified-gravity effective stress-energy solvers."""
 
 import numpy as np
+import pytest
 
 from warpfactory.grid import (
+    BransDickeSolver,
     FofRModel,
     FofRSolver,
     GridSolver,
@@ -158,3 +160,93 @@ class TestFofRSolver:
         assert diff.max() > 1e-6
         corner = diff[:, :, 0, 0, 0, 0]
         assert corner.max() < 1e-2 * diff.max()
+
+
+class TestBransDickeSolver:
+    def _alcubierre(self, n=20, h=0.5):
+        grid_size = (1, n, n, n)
+        return alcubierre_metric(
+            grid_size,
+            centered_world(grid_size, h),
+            v=0.5,
+            R=2.0,
+            sigma=4.0,
+            grid_scale=(1, h, h, h),
+        )
+
+    def test_constant_phi_scales_gr_answer(self):
+        # phi is the inverse effective gravitational constant, so a
+        # constant phi with V = 0 multiplies the GR matter budget.
+        metric = self._alcubierre()
+        T_gr = GridSolver(order=4).solve(metric, contravariant=False)
+        solver = BransDickeSolver(omega=3.0, order=4)
+        T_1 = solver.solve(metric, 1.0, contravariant=False)
+        T_2 = solver.solve(metric, 2.0, contravariant=False)
+        np.testing.assert_allclose(T_1.tensor, T_gr.tensor, atol=1e-15)
+        np.testing.assert_allclose(T_2.tensor, 2.0 * T_gr.tensor, atol=1e-15)
+
+    def test_omega_zero_equals_f_of_r(self):
+        # Metric f(R) gravity is Brans-Dicke at omega = 0 with
+        # phi = F(R) and V = R F - f; for Starobinsky V = alpha R^2.
+        alpha = 0.05
+        metric = self._alcubierre()
+        fr = FofRSolver(starobinsky_model(alpha), order=4)
+        R = fr.ricci_scalar(metric)
+        T_fr = fr.solve(metric, contravariant=False)
+
+        V_grid = alpha * R**2
+        T_bd = BransDickeSolver(omega=0.0, order=4).solve(
+            metric,
+            1.0 + 2.0 * alpha * R,
+            potential=lambda phi: V_grid,
+            contravariant=False,
+        )
+        scale = np.abs(T_fr.tensor).max()
+        assert np.abs(T_bd.tensor - T_fr.tensor).max() / scale < 1e-14
+
+    def test_scalar_gradient_sources_matter_on_flat_space(self):
+        # Flat metric, varying phi: the theory demands nonzero matter
+        # (the scalar gradient terms) even though G_munu = 0. With
+        # g = eta and phi = phi(x): kinetic_tt = omega phi'^2 / (2 phi)
+        # (g_tt = -1 flips the (d phi)^2 term), hessian_tt = 0, and
+        # g_tt Box phi = -phi'', so
+        # 8 pi T_tt = -(omega/2) phi'^2 / phi - phi''.
+        n, dx, k, eps = 201, 0.05, 1.0, 1e-3
+        x = np.arange(n) * dx - (n - 1) * dx / 2
+        g = np.zeros((4, 4, 1, n, 1, 1))
+        g[0, 0] = -1.0
+        for i in (1, 2, 3):
+            g[i, i] = 1.0
+        metric = SpacetimeTensor(
+            tensor=g,
+            type="metric",
+            index="covariant",
+            scaling=(1.0, dx, dx, dx),
+            name="flat",
+        )
+        omega = 4.0
+        phi_profile = 1.0 + eps * np.sin(k * x)
+        phi = np.broadcast_to(phi_profile[None, :, None, None], (1, n, 1, 1))
+        T = BransDickeSolver(omega=omega, order=4).solve(
+            metric, phi, contravariant=False
+        )
+
+        dphi = eps * k * np.cos(k * x)
+        d2phi = -eps * k**2 * np.sin(k * x)
+        expected_tt = (-0.5 * omega * dphi**2 / phi_profile - d2phi) / (8.0 * np.pi)
+        interior = slice(20, -20)
+        num = T.tensor[0, 0, 0, :, 0, 0][interior]
+        scale = np.abs(expected_tt).max()
+        assert np.abs(num - expected_tt[interior]).max() / scale < 1e-3
+
+    def test_rejects_nonpositive_phi(self):
+        metric = minkowski_metric((1, 6, 6, 6))
+        with pytest.raises(ValueError, match="phi must be positive"):
+            BransDickeSolver(omega=1.0).solve(metric, 0.0)
+
+    def test_params_record_omega(self):
+        metric = minkowski_metric((1, 6, 6, 6))
+        T = BransDickeSolver(omega=7.5, order=2).solve(metric, 1.0)
+        assert T.params["omega"] == 7.5
+        assert T.params["order"] == 2
+        assert T.type == "stress-energy"

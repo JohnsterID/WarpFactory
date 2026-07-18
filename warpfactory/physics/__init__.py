@@ -8,6 +8,7 @@ from .junction import IsraelJunction
 from .quantum import QuantumEffects
 from .quantum_inequality import FordRomanInequality
 from .tidal import TidalForces
+from .trace_anomaly import ConformalTraceAnomaly
 
 __all__ = [
     "AveragedNullEnergy",
@@ -18,4 +19,5 @@ __all__ = [
     "BondiSachsFlux",
     "QuantumEffects",
     "FordRomanInequality",
+    "ConformalTraceAnomaly",
 ]

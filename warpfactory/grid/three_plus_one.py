@@ -73,5 +73,9 @@ def three_plus_one_decomposer(metric: SpacetimeTensor):
     gamma_down = g[1:4, 1:4]
     gamma_up = inverse_tensor(gamma_down)
     beta_up = np.einsum("ij...,j...->i...", gamma_up, beta_down)
-    alpha = np.sqrt(np.einsum("i...,i...->...", beta_up, beta_down) - g[0, 0])
+    # Where the t = const slicing is not spacelike (e.g. inside a
+    # horizon in static coordinates) the lapse is undefined; NaN is the
+    # honest value there, so silence the sqrt warning.
+    with np.errstate(invalid="ignore"):
+        alpha = np.sqrt(np.einsum("i...,i...->...", beta_up, beta_down) - g[0, 0])
     return alpha, beta_down, gamma_down, beta_up, gamma_up

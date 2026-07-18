@@ -42,8 +42,12 @@ parameters. Regenerate with `python examples/alcubierre_energy_conditions.py`.*
   inequality bounds
 - **Modified gravity:** effective stress-energy in metric-formalism
   f(R) gravity (Starobinsky R + alpha R^2, cosmological constant, or
-  any custom Lagrangian), sharing the metric-first pipeline with the
-  GR solver
+  any custom Lagrangian) and Jordan-frame Brans-Dicke scalar-tensor
+  gravity, sharing the metric-first pipeline with the GR solver
+- **Semiclassical and 3+1 diagnostics:** conformal trace anomaly of
+  massless quantum fields (validated against published Schwarzschild
+  and de Sitter closed forms) and ADM Hamiltonian/momentum constraint
+  residuals for initial-data validity of metric slices
 - **Optimization:** parameter scans and exotic-matter minimization
   over metric ansatz families
 - **Interactive:** Jupyter/ipywidgets explorer with live diagnostics
