@@ -136,6 +136,32 @@ class GridSolver:
                                 d2g[n, k, nu, mu] = d
         return d2g
 
+    def scalar_derivative1(self, s: np.ndarray, scaling) -> np.ndarray:
+        """d_k s of a grid scalar for all k; shape (4,) + grid."""
+        ds = np.zeros((4,) + s.shape)
+        for k in range(4):
+            if s.shape[k] < 2:
+                continue
+            ds[k] = self.fd.derivative1_delta(s, scaling[k], axis=k)
+        return ds
+
+    def scalar_derivative2(self, s: np.ndarray, scaling) -> np.ndarray:
+        """d_k d_n s of a grid scalar for all k, n; shape (4, 4) + grid."""
+        d2s = np.zeros((4, 4) + s.shape)
+        for k in range(4):
+            if s.shape[k] < 2:
+                continue
+            for n in range(k, 4):
+                if s.shape[n] < 2:
+                    continue
+                if k == n:
+                    d = self.fd.derivative2_delta(s, scaling[k], axis=k)
+                else:
+                    d = self.fd.mixed_derivative2_delta(s, scaling[k], scaling[n], k, n)
+                d2s[k, n] = d
+                d2s[n, k] = d
+        return d2s
+
     def christoffel(self, g_inv: np.ndarray, dg: np.ndarray) -> np.ndarray:
         """Gamma^a_bc from metric first derivatives (shared algebra).
 

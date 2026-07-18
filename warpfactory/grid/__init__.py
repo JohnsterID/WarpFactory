@@ -42,6 +42,7 @@ from .metrics import (
     van_den_broeck_comoving_metric,
     van_den_broeck_metric,
 )
+from .modified_gravity import FofRModel, FofRSolver, gr_model, starobinsky_model
 from .plotting import get_slice_data, plot_tensor, plot_three_plus_one
 from .scalars import eulerian_velocity, get_scalars
 from .shape_functions import alcubierre_shape, compact_sigmoid
@@ -104,6 +105,10 @@ __all__ = [
     "invariant_energy_conditions",
     "local_mixed_stress_energy",
     "type_i_witnesses",
+    "FofRModel",
+    "FofRSolver",
+    "gr_model",
+    "starobinsky_model",
     "do_frame_transfer",
     "eulerian_transformation_matrix",
     "generate_uniform_field",

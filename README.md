@@ -40,6 +40,10 @@ parameters. Regenerate with `python examples/alcubierre_energy_conditions.py`.*
 - **Analysis:** curvature invariants, kinematic scalars, geodesics,
   horizons, singularities, lensing, tidal forces, Ford-Roman quantum
   inequality bounds
+- **Modified gravity:** effective stress-energy in metric-formalism
+  f(R) gravity (Starobinsky R + alpha R^2, cosmological constant, or
+  any custom Lagrangian), sharing the metric-first pipeline with the
+  GR solver
 - **Optimization:** parameter scans and exotic-matter minimization
   over metric ansatz families
 - **Interactive:** Jupyter/ipywidgets explorer with live diagnostics

@@ -114,6 +114,19 @@ the ported surface stays recognizable:
   Christoffel symbols, so ANEC rays with nonzero impact parameter --
   unreachable from the 1-D slice API -- are evaluated without any
   grid interpolation.
+- f(R) modified gravity (`FofRSolver`, `FofRModel`, `gr_model`,
+  `starobinsky_model`): the metric-first pipeline generalized from the
+  Einstein field equations to metric-formalism f(R) gravity
+  (Sotiriou & Faraoni, arXiv:0805.1726, eq. 6). Given a metric, the
+  solver returns the matter stress-energy the f(R) field equations
+  demand, including the scalaron terms
+  (g Box - nabla nabla) F(R) built from a finite-differenced Ricci
+  scalar map. `f(R) = R` reproduces `GridSolver` exactly; the
+  Starobinsky `R + alpha R^2` model lets users ask how a warp
+  metric's matter requirement shifts away from general relativity.
+  The scalaron terms carry one extra level of finite-difference
+  stencil error relative to the GR piece (the Ricci scalar map is
+  itself FD output).
 
 The older 1-D axial-slice API (`warpfactory.metrics`,
 `warpfactory.solver`) remains available and unchanged.

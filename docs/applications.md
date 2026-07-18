@@ -238,6 +238,44 @@ The FD `GridSolver` remains the right tool for metrics that exist only
 as sampled data (TOV-built warp shells, piecewise profiles); autodiff
 of non-smooth metrics is not meaningful in any backend.
 
+## f(R) modified gravity
+
+Extension beyond the MATLAB original. The standard pipeline answers
+"what matter does general relativity require to sustain this metric?"
+`FofRSolver` asks the same question in metric-formalism f(R) gravity
+(Sotiriou & Faraoni, arXiv:0805.1726):
+
+    F(R) R_munu - f(R)/2 g_munu + (g_munu Box - nabla_mu nabla_nu) F(R)
+        = 8 pi T_munu,    F = df/dR
+
+The scalaron terms turn curvature gradients into an effective
+geometric source, so the matter budget of a warp metric shifts away
+from the GR answer -- the frontier question being whether a modified
+theory softens the exotic-matter requirement:
+
+```python
+from warpfactory.grid import (
+    FofRSolver, GridSolver, alcubierre_metric,
+    gr_model, starobinsky_model,
+)
+
+metric = alcubierre_metric(
+    (1, 64, 64, 64), (0.0, 7.875, 7.875, 7.875),
+    v=0.5, R=2.0, sigma=4.0, grid_scale=(1, 0.25, 0.25, 0.25),
+)
+
+T_gr = GridSolver(order=4).solve(metric)
+T_st = FofRSolver(starobinsky_model(alpha=0.05), order=4).solve(metric)
+delta = T_st.tensor - T_gr.tensor   # scalaron correction map
+```
+
+`gr_model()` (f(R) = R) reproduces `GridSolver` to round-off, and any
+custom Lagrangian plugs in through `FofRModel(f=..., f_prime=...)` --
+for example `f(R) = R - 2 Lambda` demands the exact dark-energy vacuum
+source `T_munu = Lambda g_munu / 8 pi` on flat space. The output is a
+regular stress-energy `SpacetimeTensor`, so the energy-condition and
+Hawking-Ellis machinery applies unchanged.
+
 ## Parameter search and optimization
 
 Wrap any metric builder into a searchable ansatz and minimize
